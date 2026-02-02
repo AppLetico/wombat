@@ -808,7 +808,24 @@ Wombat is backend-agnostic as long as the target backend implements the Control 
 
 ## Security
 
-Based on [OpenClaw's security documentation](https://docs.openclaw.ai/gateway/security/), here's how Wombat handles security:
+Wombat takes a **security-first, minimal-privilege approach** that is fundamentally different from personal AI assistants. Where tools like OpenClaw optimize for broad capability (shell access, browser control, filesystem writes), Wombat optimizes for **safe, auditable operations** in multi-tenant environments.
+
+### Security Model: Constrained by Design
+
+| Aspect | OpenClaw | Wombat |
+|--------|----------|--------|
+| Shell access | ✅ Full | ❌ None |
+| Browser control | ✅ Full | ❌ None |
+| Filesystem writes | ✅ Full | ❌ None (read-only workspace) |
+| Cross-user access | N/A (single user) | ❌ Blocked by user_id scoping |
+| Tool execution | Direct on host | Proxied through backend APIs |
+| Self-modification | ✅ Can edit own skills | ❌ Workspace is immutable |
+
+This constrained model means:
+- Agents **cannot** exfiltrate data to external systems
+- Agents **cannot** execute arbitrary code
+- Agents **cannot** access other users' data
+- All actions are **auditable** via the trace and audit log
 
 ### Credential Storage
 
@@ -817,6 +834,7 @@ Based on [OpenClaw's security documentation](https://docs.openclaw.ai/gateway/se
 | `OPENAI_API_KEY` | Environment variable | Never in workspace files |
 | `AGENT_JWT_SECRET` | Environment variable | Shared with backend |
 | `AGENT_DAEMON_API_KEY` | Environment variable | Optional auth for daemon |
+| `OPS_OIDC_*` | Environment variable | Ops Console authentication |
 | Workspace files | Filesystem (read-only) | No secrets in .md files |
 
 **Important:** Never store API keys, tokens, or passwords in workspace files (AGENTS.md, SOUL.md, etc.). Keep all secrets in environment variables or a secrets manager.
