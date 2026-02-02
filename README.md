@@ -114,7 +114,7 @@ Start with:
 - [docs/CONTROL_PLANE_CONTRACT.md](docs/CONTROL_PLANE_CONTRACT.md)
 - [docs/CONTROL_PLANE_QUICKSTART.md](docs/CONTROL_PLANE_QUICKSTART.md)
 - [docs/control-plane.openapi.yaml](docs/control-plane.openapi.yaml)
-- `examples/mission-control-lite/` (reference backend)
+- [examples/mission-control-lite/](examples/mission-control-lite/) (reference backend)
 
 ## API at a glance
 
