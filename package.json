@@ -1,0 +1,35 @@
+{
+  "name": "wombat",
+  "version": "0.1.0",
+  "description": "Portable agent daemon + dispatcher for Mission Control.",
+  "type": "module",
+  "bin": {
+    "wombat": "dist/cli.js"
+  },
+  "scripts": {
+    "dev": "tsx src/server/index.ts",
+    "build": "tsc",
+    "start": "node dist/server/index.js",
+    "test": "vitest run",
+    "dispatcher": "tsx src/scripts/notification_dispatcher.ts",
+    "heartbeat": "tsx src/scripts/heartbeat.ts",
+    "standup": "tsx src/scripts/daily_standup.ts",
+    "conformance": "tsx scripts/conformance.ts",
+    "cli": "tsx src/cli.ts",
+    "lint": "echo \"no lint\""
+  },
+  "dependencies": {
+    "@mariozechner/pi-ai": "^0.50.7",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.5",
+    "fastify": "^4.26.2",
+    "jose": "^5.6.3",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "vitest": "^2.1.5",
+    "tsx": "^4.19.2",
+    "typescript": "^5.6.3"
+  }
+}

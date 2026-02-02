@@ -1,0 +1,42 @@
+<svg width="1600" height="450" viewBox="0 0 1600 450" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Wombat">
+  <rect width="1600" height="450" fill="#FFFFFF"/>
+
+  <!-- Simple wombat head icon -->
+  <g transform="translate(90 85)">
+    <!-- head -->
+    <path d="M150 0C71 0 20 52 20 132V168C20 248 71 300 150 300C229 300 280 248 280 168V132C280 52 229 0 150 0Z" fill="#7B7570"/>
+    <!-- cheeks -->
+    <ellipse cx="86" cy="182" rx="26" ry="18" fill="#E8A5A5" opacity="0.6"/>
+    <ellipse cx="214" cy="182" rx="26" ry="18" fill="#E8A5A5" opacity="0.6"/>
+    <!-- ears -->
+    <path d="M72 28C50 10 24 20 18 44C10 78 44 94 72 74V28Z" fill="#6E6863"/>
+    <path d="M228 28C250 10 276 20 282 44C290 78 256 94 228 74V28Z" fill="#6E6863"/>
+    <path d="M62 44C48 32 32 38 28 52C24 70 42 78 62 68V44Z" fill="#BFA79B"/>
+    <path d="M238 44C252 32 268 38 272 52C276 70 258 78 238 68V44Z" fill="#BFA79B"/>
+    <!-- eyes -->
+    <circle cx="108" cy="132" r="16" fill="#2B2D31"/>
+    <circle cx="192" cy="132" r="16" fill="#2B2D31"/>
+    <circle cx="114" cy="126" r="5" fill="#FFFFFF" opacity="0.9"/>
+    <circle cx="198" cy="126" r="5" fill="#FFFFFF" opacity="0.9"/>
+    <!-- snout -->
+    <ellipse cx="150" cy="176" rx="44" ry="34" fill="#BFA79B"/>
+    <ellipse cx="150" cy="176" rx="18" ry="14" fill="#2B2D31" opacity="0.9"/>
+    <path d="M150 190C140 190 132 198 132 208C132 228 150 244 150 244C150 244 168 228 168 208C168 198 160 190 150 190Z" fill="#2B2D31" opacity="0.85"/>
+    <!-- headset -->
+    <path d="M48 132C48 88 84 52 128 52H172C216 52 252 88 252 132" stroke="#2B2D31" stroke-width="12" stroke-linecap="round"/>
+    <rect x="38" y="128" width="28" height="74" rx="14" fill="#2B2D31"/>
+    <rect x="234" y="128" width="28" height="74" rx="14" fill="#2B2D31"/>
+    <path d="M238 224C226 246 206 260 182 266" stroke="#2B2D31" stroke-width="10" stroke-linecap="round"/>
+    <circle cx="170" cy="270" r="10" fill="#2B2D31"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="460" y="260"
+        font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, \"Apple Color Emoji\", \"Segoe UI Emoji\""
+        font-size="188"
+        font-weight="800"
+        letter-spacing="4"
+        fill="#1F2328">
+    WOMBAT
+  </text>
+</svg>

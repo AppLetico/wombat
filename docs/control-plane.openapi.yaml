@@ -1,0 +1,209 @@
+openapi: 3.0.3
+info:
+  title: Wombat Control Plane Contract
+  version: v1
+  description: Minimum HTTP contract required for a Mission Control-compatible backend.
+servers:
+  - url: http://localhost:8000
+paths:
+  /api/mission-control/capabilities:
+    get:
+      summary: Capability discovery
+      security:
+        - AgentToken: []
+      responses:
+        "200":
+          description: Capabilities for this backend
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CapabilitiesResponse"
+  /api/mission-control/tasks:
+    get:
+      summary: List tasks
+      security:
+        - AgentToken: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: cursor
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Task list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TaskListResponse"
+    post:
+      summary: Create task
+      security:
+        - AgentToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTaskRequest"
+      responses:
+        "200":
+          description: Task created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+  /api/mission-control/messages:
+    post:
+      summary: Post message
+      security:
+        - AgentToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMessageRequest"
+      responses:
+        "200":
+          description: Message created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+  /api/mission-control/documents:
+    post:
+      summary: Post document
+      security:
+        - AgentToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDocumentRequest"
+      responses:
+        "200":
+          description: Document created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Document"
+components:
+  securitySchemes:
+    AgentToken:
+      type: apiKey
+      in: header
+      name: X-Agent-Token
+  schemas:
+    CapabilitiesResponse:
+      type: object
+      required: [contract_version, features]
+      properties:
+        contract_version:
+          type: string
+          example: v1
+        features:
+          type: object
+          additionalProperties:
+            type: boolean
+    TaskListResponse:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Task"
+        next_cursor:
+          type: string
+          nullable: true
+    Task:
+      type: object
+      required: [id, title, status]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        status:
+          type: string
+        description:
+          type: string
+          nullable: true
+    CreateTaskRequest:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        idempotency_key:
+          type: string
+    CreateMessageRequest:
+      type: object
+      required: [task_id, content]
+      properties:
+        task_id:
+          type: string
+        content:
+          type: string
+        actor_type:
+          type: string
+          enum: [agent, user]
+        actor_id:
+          type: string
+        agent_role:
+          type: string
+        attachments:
+          type: object
+          nullable: true
+          additionalProperties: true
+        idempotency_key:
+          type: string
+    Message:
+      type: object
+      required: [id, task_id, content]
+      properties:
+        id:
+          type: string
+        task_id:
+          type: string
+        content:
+          type: string
+    CreateDocumentRequest:
+      type: object
+      required: [title, content, task_id]
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        doc_type:
+          type: string
+        task_id:
+          type: string
+        idempotency_key:
+          type: string
+    Document:
+      type: object
+      required: [id, title, task_id]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        doc_type:
+          type: string
+        task_id:
+          type: string

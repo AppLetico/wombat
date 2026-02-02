@@ -1,0 +1,33 @@
+{
+  "backend_base_url": "${BACKEND_URL}",
+  "agent_auth": {
+    "jwt_secret_env": "AGENT_JWT_SECRET",
+    "jwt_algorithm": "HS256"
+  },
+  "model_tiers": {
+    "cheap_env": "OPENAI_MODEL_CHEAP",
+    "default_env": "OPENAI_MODEL_DEFAULT",
+    "best_env": "OPENAI_MODEL_BEST",
+    "fallback_env": "OPENAI_MODEL_FALLBACK"
+  },
+  "agents": [
+    {
+      "role": "jarvis",
+      "session_key_template": "user:{userId}:jarvis",
+      "heartbeat_cron": "0/15 * * * *",
+      "default_model_tier": "default"
+    },
+    {
+      "role": "scout",
+      "session_key_template": "user:{userId}:scout",
+      "heartbeat_cron": "5/15 * * * *",
+      "default_model_tier": "cheap"
+    },
+    {
+      "role": "analyst",
+      "session_key_template": "user:{userId}:analyst",
+      "heartbeat_cron": "10/15 * * * *",
+      "default_model_tier": "default"
+    }
+  ]
+}
