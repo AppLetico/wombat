@@ -13,7 +13,10 @@ import {
   OpsAuthError,
   canAccessTenant,
   canAccessWorkspace,
-  requireRole
+  requireRole,
+  requirePermission,
+  getContextPermissions,
+  PermissionError
 } from "../lib/auth/opsAuth.js";
 // Providers
 import { generateAgentReply, compactHistory, runLLMTask, type AgentReplyResult } from "../lib/providers/openaiClient.js";
@@ -44,7 +47,8 @@ import { runPromotionChecks } from "../lib/ops/promotionChecks.js";
 import { getSkillEnvironmentUsage, getSkillUsageStats, getPermissionDiff } from "../lib/ops/skillOps.js";
 import { getCostDashboard, getRiskDashboard } from "../lib/ops/dashboards.js";
 // Governance
-import { getAuditLog } from "../lib/governance/auditLog.js";
+import { getAuditLog, logOverrideUsed } from "../lib/governance/auditLog.js";
+import { OVERRIDE_REASON_CODES, OverrideSchema, type OverrideRequest } from "../lib/ops/overrides.js";
 import { getBudgetManager } from "../lib/governance/budgetManager.js";
 import { calculateRiskScore, type RiskScoringInput } from "../lib/governance/riskScoring.js";
 // Evals
@@ -125,10 +129,15 @@ export function buildApp() {
   /**
    * Ops Console identity endpoint.
    * GET /ops/api/me
+   *
+   * Returns user identity, effective permissions, and access scope.
+   * UI uses this to deterministically enable/disable actions.
    */
   app.get("/ops/api/me", async (request, reply) => {
     try {
       const context = await requireOpsContextFromHeaders(request.headers);
+      const permissions = getContextPermissions(context);
+
       return reply.send({
         user: {
           id: context.userId,
@@ -137,6 +146,13 @@ export function buildApp() {
           tenant_id: context.tenantId,
           workspace_id: context.workspaceId,
           allowed_tenants: context.allowedTenants
+        },
+        permissions,
+        scope: {
+          tenants: context.allowedTenants.length > 0
+            ? context.allowedTenants
+            : [context.tenantId],
+          workspaces: context.workspaceId ? [context.workspaceId] : []
         }
       });
     } catch (error) {
@@ -294,7 +310,8 @@ export function buildApp() {
       const annotationsStore = getTraceAnnotations();
       const detail = buildTraceDetailView({
         trace,
-        annotations: annotationsStore.getForTrace(trace.id)
+        annotations: annotationsStore.getForTrace(trace.id),
+        role: context.role
       });
 
       return reply.send({ trace: detail });
@@ -395,7 +412,10 @@ export function buildApp() {
   const OpsPromotionExecuteSchema = z.object({
     source_env: z.string(),
     target_env: z.string(),
-    override: z.boolean().optional().default(false),
+    override: z.object({
+      reason_code: z.enum(OVERRIDE_REASON_CODES),
+      justification: z.string().min(10, "Justification must be at least 10 characters")
+    }).optional(),
     annotation: z.object({
       key: z.string().min(1),
       value: z.string().min(1)
@@ -405,7 +425,7 @@ export function buildApp() {
   app.post("/ops/api/workspaces/:workspaceId/promotions/execute", async (request, reply) => {
     try {
       const context = await requireOpsContextFromHeaders(request.headers);
-      requireRole(context, "release_manager");
+      requirePermission(context, "workspace:promote");
 
       const parsed = OpsPromotionExecuteSchema.safeParse(request.body);
       if (!parsed.success) {
@@ -423,10 +443,26 @@ export function buildApp() {
         targetEnv: parsed.data.target_env
       });
 
-      if (checks.blocked && !parsed.data.override) {
+      const hasOverride = !!parsed.data.override;
+
+      if (checks.blocked && !hasOverride) {
         return reply.status(409).send({
-          error: "Promotion blocked",
-          checks
+          error: "Promotion blocked. Use override with reason_code and justification to proceed.",
+          checks,
+          override_required: true
+        });
+      }
+
+      // Log override usage if override is being used
+      if (hasOverride && parsed.data.override) {
+        logOverrideUsed(workspaceId, {
+          workspaceId,
+          actor: context.userId,
+          role: context.role,
+          action: "workspace:promote",
+          targetId: workspaceId,
+          reasonCode: parsed.data.override.reason_code,
+          justification: parsed.data.override.justification
         });
       }
 
@@ -447,7 +483,8 @@ export function buildApp() {
           source_env: parsed.data.source_env,
           target_env: parsed.data.target_env,
           version_hash: result.versionHash,
-          override: parsed.data.override,
+          override_used: hasOverride,
+          override_reason: parsed.data.override?.reason_code,
           annotation: parsed.data.annotation,
           checks: checks.checks
         }
@@ -458,10 +495,19 @@ export function buildApp() {
         promotion: {
           source_env: result.sourceEnv,
           target_env: result.targetEnv,
-          version_hash: result.versionHash
+          version_hash: result.versionHash,
+          override_used: hasOverride
         }
       });
     } catch (error) {
+      if (error instanceof PermissionError) {
+        return reply.status(403).send({
+          error: error.message,
+          code: "permission_denied",
+          permission: error.permission,
+          required_roles: error.requiredRoles
+        });
+      }
       if (error instanceof OpsAuthError) {
         const status =
           error.code === "missing_token" ? 401 :
@@ -516,13 +562,17 @@ export function buildApp() {
     annotation: z.object({
       key: z.string().min(1),
       value: z.string().min(1)
-    })
+    }),
+    override: z.object({
+      reason_code: z.enum(OVERRIDE_REASON_CODES),
+      justification: z.string().min(10, "Justification must be at least 10 characters")
+    }).optional()
   });
 
   app.post("/ops/api/workspaces/:workspaceId/rollback", async (request, reply) => {
     try {
       const context = await requireOpsContextFromHeaders(request.headers);
-      requireRole(context, "release_manager");
+      requirePermission(context, "workspace:rollback");
 
       const { workspaceId } = request.params as { workspaceId: string };
       if (!canAccessTenant(context, workspaceId)) {
@@ -532,6 +582,21 @@ export function buildApp() {
       const parsed = OpsRollbackSchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.status(400).send({ error: "Invalid payload", details: parsed.error.flatten() });
+      }
+
+      const hasOverride = !!parsed.data.override;
+
+      // Log override usage if override is being used
+      if (hasOverride && parsed.data.override) {
+        logOverrideUsed(workspaceId, {
+          workspaceId,
+          actor: context.userId,
+          role: context.role,
+          action: "workspace:rollback",
+          targetId: workspaceId,
+          reasonCode: parsed.data.override.reason_code,
+          justification: parsed.data.override.justification
+        });
       }
 
       const workspace = getWorkspaceLoader();
@@ -546,12 +611,26 @@ export function buildApp() {
         eventData: {
           action: "rollback",
           version_hash: parsed.data.version_hash,
-          annotation: parsed.data.annotation
+          annotation: parsed.data.annotation,
+          override_used: hasOverride,
+          override_reason: parsed.data.override?.reason_code
         }
       });
 
-      return reply.send({ status: "ok", version_hash: parsed.data.version_hash });
+      return reply.send({
+        status: "ok",
+        version_hash: parsed.data.version_hash,
+        override_used: hasOverride
+      });
     } catch (error) {
+      if (error instanceof PermissionError) {
+        return reply.status(403).send({
+          error: error.message,
+          code: "permission_denied",
+          permission: error.permission,
+          required_roles: error.requiredRoles
+        });
+      }
       if (error instanceof OpsAuthError) {
         const status =
           error.code === "missing_token" ? 401 :
@@ -621,7 +700,7 @@ export function buildApp() {
   app.post("/ops/api/skills/:name/:version/promote", async (request, reply) => {
     try {
       const context = await requireOpsContextFromHeaders(request.headers);
-      requireRole(context, "admin");
+      requirePermission(context, "skill:promote");
 
       const parsed = OpsSkillPromoteSchema.safeParse(request.body);
       if (!parsed.success) {
@@ -663,6 +742,14 @@ export function buildApp() {
         }
       });
     } catch (error) {
+      if (error instanceof PermissionError) {
+        return reply.status(403).send({
+          error: error.message,
+          code: "permission_denied",
+          permission: error.permission,
+          required_roles: error.requiredRoles
+        });
+      }
       if (error instanceof OpsAuthError) {
         const status =
           error.code === "missing_token" ? 401 :
@@ -717,6 +804,86 @@ export function buildApp() {
         return reply.status(status).send({ error: error.message, code: error.code });
       }
       return reply.status(500).send({ error: "Failed to load risk dashboard" });
+    }
+  });
+
+  /**
+   * Ops Console audit log endpoint.
+   * GET /ops/api/audit
+   *
+   * Requires: operator+ role (audit:view permission)
+   * Query: tenant_id, workspace_id, event_type, start_date, end_date, limit, offset
+   */
+  const OpsAuditQuerySchema = z.object({
+    tenant_id: z.string().optional(),
+    workspace_id: z.string().optional(),
+    event_type: z.string().optional(),
+    start_date: z.string().optional(),
+    end_date: z.string().optional(),
+    limit: z.coerce.number().int().min(1).max(200).default(50),
+    offset: z.coerce.number().int().min(0).default(0)
+  });
+
+  app.get("/ops/api/audit", async (request, reply) => {
+    try {
+      const context = await requireOpsContextFromHeaders(request.headers);
+      requirePermission(context, "audit:view");
+
+      const parsed = OpsAuditQuerySchema.safeParse(request.query);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: "Invalid query", details: parsed.error.flatten() });
+      }
+
+      const query = parsed.data;
+      const tenantId = query.tenant_id || context.tenantId;
+
+      if (!canAccessTenant(context, tenantId)) {
+        return reply.status(403).send({ error: "Tenant access denied" });
+      }
+
+      const auditLog = getAuditLog();
+      const result = auditLog.query({
+        tenantId,
+        workspaceId: query.workspace_id,
+        eventType: query.event_type as any,
+        startDate: query.start_date,
+        endDate: query.end_date,
+        limit: query.limit,
+        offset: query.offset
+      });
+
+      return reply.send({
+        entries: result.entries.map(entry => ({
+          id: entry.id,
+          event_type: entry.eventType,
+          tenant_id: entry.tenantId,
+          workspace_id: entry.workspaceId,
+          trace_id: entry.traceId,
+          event_data: entry.eventData,
+          created_at: entry.createdAt
+        })),
+        total: result.total,
+        has_more: result.hasMore,
+        limit: query.limit,
+        offset: query.offset
+      });
+    } catch (error) {
+      if (error instanceof PermissionError) {
+        return reply.status(403).send({
+          error: error.message,
+          code: "permission_denied",
+          permission: error.permission,
+          required_roles: error.requiredRoles
+        });
+      }
+      if (error instanceof OpsAuthError) {
+        const status =
+          error.code === "missing_token" ? 401 :
+          error.code === "config_error" ? 500 :
+          403;
+        return reply.status(status).send({ error: error.message, code: error.code });
+      }
+      return reply.status(500).send({ error: "Failed to load audit log" });
     }
   });
 
@@ -906,7 +1073,7 @@ export function buildApp() {
    */
   app.get("/api/version", async () => {
     return {
-      version: "1.1.0",
+      version: "1.2.1",
       contract_version: WOMBAT_CONTRACT_VERSION,
       name: "Wombat Ops",
       features: [

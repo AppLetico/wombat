@@ -13,6 +13,12 @@ vi.mock("../lib/auth/opsAuth.js", () => ({
   canAccessTenant: vi.fn(() => true),
   canAccessWorkspace: vi.fn(() => true),
   requireRole: vi.fn(() => undefined),
+  requirePermission: vi.fn(() => undefined),
+  getContextPermissions: vi.fn(() => ["trace:view", "dashboard:view"]),
+  PermissionError: class PermissionError extends Error {
+    permission = "trace:view";
+    requiredRoles = ["admin"];
+  },
   OpsAuthError: class OpsAuthError extends Error {}
 }));
 
@@ -41,6 +47,8 @@ describe("Ops console endpoints", () => {
     expect(response.statusCode).toBe(200);
     const body = response.json();
     expect(body.user).toBeDefined();
+    expect(body.permissions).toBeDefined();
+    expect(body.scope).toBeDefined();
   });
 
   it("returns traces from /ops/api/traces", async () => {
@@ -74,5 +82,19 @@ describe("Ops console endpoints", () => {
     });
 
     expect(response.statusCode).toBe(200);
+  });
+
+  it("returns audit log from /ops/api/audit", async () => {
+    const app = buildApp();
+    const response = await app.inject({
+      method: "GET",
+      url: "/ops/api/audit",
+      headers: { authorization: "Bearer test" }
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.entries).toBeDefined();
+    expect(body.total).toBeDefined();
   });
 });

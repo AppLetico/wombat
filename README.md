@@ -14,7 +14,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
-  <img src="https://img.shields.io/badge/version-1.1.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.2.1-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/built_with-TypeScript-blue.svg" alt="TypeScript">
   <img src="https://img.shields.io/badge/status-Beta-yellow.svg" alt="Status">
 </p>
@@ -139,7 +139,7 @@ npm run dev
 npm run build && npm start
 ```
 
-### Ops Console (v1.2)
+### Ops Console (v1.2.1)
 
 The Operations Console is served from the same daemon at `/ops` and is protected by OIDC + RBAC.
 
@@ -154,6 +154,22 @@ OPS_TENANT_CLAIM=tenant_id
 OPS_WORKSPACE_CLAIM=workspace_id
 OPS_ALLOWED_TENANTS_CLAIM=allowed_tenants
 ```
+
+Optional Ops Console env vars:
+
+```
+# Deep link templates (use {id} placeholder)
+DEEP_LINK_TASK_TEMPLATE=
+DEEP_LINK_DOC_TEMPLATE=
+DEEP_LINK_MSG_TEMPLATE=
+```
+
+v1.2.1 hardening highlights:
+- Action-level RBAC with resolved permissions at `/ops/api/me`
+- Break-glass overrides require reason_code + justification, audited as `ops_override_used`
+- Dashboards include retention/sampling coverage metadata
+- Non-admin users never receive raw prompt/tool payloads in trace detail
+- New audit API: `GET /ops/api/audit` with pagination
 
 ---
 
@@ -202,6 +218,7 @@ OPS_ALLOWED_TENANTS_CLAIM=allowed_tenants
 |----------|---------|
 | `GET /audit` | Query audit logs |
 | `GET /audit/stats` | Audit statistics |
+| `GET /ops/api/audit` | Ops audit log (OIDC + RBAC, v1.2.1) |
 | `GET /budget` | Get tenant budget |
 | `POST /budget` | Set tenant budget |
 | `POST /budget/check` | Check if spend is within budget |

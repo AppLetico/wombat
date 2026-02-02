@@ -77,7 +77,14 @@ export const config = {
   // Default timezone for time context injection (empty = use system timezone)
   defaultTimezone: process.env.WOMBAT_DEFAULT_TIMEZONE || "",
   // Include time context in system prompt (true by default)
-  includeTimeContext: process.env.WOMBAT_INCLUDE_TIME_CONTEXT !== "false"
+  includeTimeContext: process.env.WOMBAT_INCLUDE_TIME_CONTEXT !== "false",
+
+  // Deep link templates for trace detail (Ops Console)
+  // Use {id} as placeholder for the entity ID
+  // Example: "https://app.example.com/tasks/{id}"
+  deepLinkTaskTemplate: process.env.DEEP_LINK_TASK_TEMPLATE || "",
+  deepLinkDocTemplate: process.env.DEEP_LINK_DOC_TEMPLATE || "",
+  deepLinkMsgTemplate: process.env.DEEP_LINK_MSG_TEMPLATE || ""
 };
 
 export function requireEnv(name: string, value: string) {

@@ -34,7 +34,8 @@ export type AuditEventType =
   | 'rate_limit_exceeded'
   | 'config_change'
   | 'system_startup'
-  | 'system_shutdown';
+  | 'system_shutdown'
+  | 'ops_override_used';
 
 /**
  * An entry in the audit log
@@ -477,6 +478,37 @@ export function logPermissionDenied(
       tool_name: data.toolName,
       reason: data.reason,
       skill_name: data.skillName,
+    },
+  });
+}
+
+/**
+ * Log a break-glass override usage.
+ * Captures actor, role, action, and structured justification.
+ */
+export function logOverrideUsed(
+  tenantId: string,
+  data: {
+    workspaceId?: string;
+    actor: string;
+    role: string;
+    action: string;
+    targetId: string;
+    reasonCode: string;
+    justification: string;
+  }
+): void {
+  auditLog('ops_override_used', {
+    tenantId,
+    workspaceId: data.workspaceId,
+    eventData: {
+      actor: data.actor,
+      role: data.role,
+      action: data.action,
+      target_id: data.targetId,
+      reason_code: data.reasonCode,
+      justification: data.justification,
+      timestamp: new Date().toISOString(),
     },
   });
 }

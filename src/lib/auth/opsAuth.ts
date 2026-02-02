@@ -1,5 +1,11 @@
 import { createRemoteJWKSet, jwtVerify, type JWTPayload } from "jose";
 import { config } from "../core/config.js";
+import {
+  type Permission,
+  hasPermission,
+  getEffectivePermissionsForRoles,
+  PermissionError
+} from "./permissions.js";
 
 export type OpsRole = "viewer" | "operator" | "release_manager" | "admin";
 
@@ -152,6 +158,26 @@ export function requireRole(context: OpsContext, minimumRole: OpsRole): void {
     throw new OpsAuthError("Insufficient role for operation", "invalid_token");
   }
 }
+
+/**
+ * Check if the context has a specific permission.
+ * Uses action-level RBAC from the permissions registry.
+ */
+export function requirePermission(context: OpsContext, permission: Permission): void {
+  if (!hasPermission(context.role, permission)) {
+    throw new PermissionError(permission, context.role);
+  }
+}
+
+/**
+ * Get all effective permissions for the context's role(s).
+ */
+export function getContextPermissions(context: OpsContext): Permission[] {
+  return getEffectivePermissionsForRoles(context.roles);
+}
+
+// Re-export permission types and helpers for convenience
+export { type Permission, hasPermission, PermissionError } from "./permissions.js";
 
 export async function requireOpsContextFromHeaders(
   headers: Record<string, string | string[] | undefined>

@@ -244,6 +244,50 @@ export function initDatabase(): void {
   runLabelsColumnMigration();
   runSkillStateColumnMigration();
   runTraceLinkingMigration();
+  runV121IndexMigration();
+}
+
+/**
+ * Migration to add v1.2.1 operational hardening indexes
+ * - risk_level column (stored, not computed) for efficient filtering
+ * - has_error computed index for error filtering
+ * - trace_annotations key+value composite index
+ */
+function runV121IndexMigration(): void {
+  const database = getDatabase();
+
+  // Check if risk_level column exists
+  const traceColumns = database
+    .prepare("PRAGMA table_info(traces)")
+    .all() as { name: string }[];
+
+  const hasRiskLevel = traceColumns.some((c) => c.name === 'risk_level');
+
+  if (!hasRiskLevel) {
+    // Add risk_level column for stored risk levels
+    database.exec(`
+      ALTER TABLE traces ADD COLUMN risk_level TEXT DEFAULT 'low';
+    `);
+  }
+
+  // Create indexes for common filter patterns (idempotent with IF NOT EXISTS)
+  database.exec(`
+    -- Index for risk level filtering
+    CREATE INDEX IF NOT EXISTS idx_traces_risk_level
+      ON traces(tenant_id, risk_level, started_at DESC);
+
+    -- Index for error filtering (error IS NOT NULL)
+    CREATE INDEX IF NOT EXISTS idx_traces_has_error
+      ON traces(tenant_id, error, started_at DESC) WHERE error IS NOT NULL;
+
+    -- Composite index for annotation key+value queries
+    CREATE INDEX IF NOT EXISTS idx_trace_annotations_key_value
+      ON trace_annotations(key, value, created_at DESC);
+
+    -- Index for audit log by workspace
+    CREATE INDEX IF NOT EXISTS idx_audit_workspace
+      ON audit_log(workspace_id, created_at DESC) WHERE workspace_id IS NOT NULL;
+  `);
 }
 
 /**
