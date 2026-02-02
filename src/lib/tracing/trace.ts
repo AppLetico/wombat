@@ -136,6 +136,14 @@ export interface AgentTrace {
 
   // Error if failed
   error?: string;
+
+  // Labels for categorization (mutable)
+  labels?: Record<string, string>;
+
+  // External entity linking (for control plane integration)
+  taskId?: string;
+  documentId?: string;
+  messageId?: string;
 }
 
 // ============================================================================
@@ -226,6 +234,10 @@ export const AgentTraceSchema = z.object({
   }),
   redactedPrompt: z.string().optional(),
   error: z.string().optional(),
+  labels: z.record(z.string()).optional(),
+  taskId: z.string().optional(),
+  documentId: z.string().optional(),
+  messageId: z.string().optional(),
 });
 
 // ============================================================================

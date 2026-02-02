@@ -19,6 +19,14 @@ export const config = {
   daemonKey: process.env.AGENT_DAEMON_API_KEY || "",
   agentJwtSecret: process.env.AGENT_JWT_SECRET || "",
   agentJwtAlgorithm: process.env.AGENT_JWT_ALGORITHM || "HS256",
+  // Ops Console (OIDC + RBAC)
+  opsOidcIssuer: process.env.OPS_OIDC_ISSUER || "",
+  opsOidcAudience: process.env.OPS_OIDC_AUDIENCE || "",
+  opsOidcJwksUrl: process.env.OPS_OIDC_JWKS_URL || "",
+  opsRoleClaim: process.env.OPS_RBAC_CLAIM || "roles",
+  opsTenantClaim: process.env.OPS_TENANT_CLAIM || "tenant_id",
+  opsWorkspaceClaim: process.env.OPS_WORKSPACE_CLAIM || "workspace_id",
+  opsAllowedTenantsClaim: process.env.OPS_ALLOWED_TENANTS_CLAIM || "allowed_tenants",
 
   // ===== Multi-Provider LLM Configuration =====
   // Default LLM provider (openai, anthropic, google, xai, groq, mistral, openrouter)

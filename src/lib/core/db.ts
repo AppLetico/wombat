@@ -170,6 +170,164 @@ export function initDatabase(): void {
     CREATE INDEX IF NOT EXISTS idx_eval_results
       ON eval_results(dataset_name, created_at DESC);
   `);
+
+  // Trace annotations table - append-only metadata for traces
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS trace_annotations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      trace_id TEXT NOT NULL,
+      key TEXT NOT NULL,
+      value TEXT NOT NULL,
+      created_at TEXT DEFAULT (datetime('now')),
+      created_by TEXT,
+      FOREIGN KEY (trace_id) REFERENCES traces(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_trace_annotations_trace
+      ON trace_annotations(trace_id);
+
+    CREATE INDEX IF NOT EXISTS idx_trace_annotations_key
+      ON trace_annotations(key, created_at DESC);
+  `);
+
+  // Tenant retention policies table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS tenant_retention_policies (
+      tenant_id TEXT PRIMARY KEY,
+      retention_days INTEGER NOT NULL DEFAULT 90,
+      sampling_strategy TEXT DEFAULT 'full',
+      storage_mode TEXT DEFAULT 'full',
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now'))
+    );
+  `);
+
+  // Workspace pins table - for pinning specific versions
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS workspace_pins (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT NOT NULL,
+      environment TEXT NOT NULL DEFAULT 'default',
+      version_hash TEXT NOT NULL,
+      skill_pins JSON DEFAULT '{}',
+      model_pin TEXT,
+      provider_pin TEXT,
+      pinned_at TEXT DEFAULT (datetime('now')),
+      pinned_by TEXT,
+      UNIQUE(workspace_id, environment)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_workspace_pins_workspace
+      ON workspace_pins(workspace_id);
+  `);
+
+  // Workspace environments table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS workspace_environments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      workspace_id TEXT NOT NULL,
+      environment TEXT NOT NULL,
+      description TEXT,
+      version_hash TEXT,
+      is_default INTEGER DEFAULT 0,
+      locked INTEGER DEFAULT 0,
+      created_at TEXT DEFAULT (datetime('now')),
+      updated_at TEXT DEFAULT (datetime('now')),
+      UNIQUE(workspace_id, environment)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_workspace_envs
+      ON workspace_environments(workspace_id);
+  `);
+
+  // Run migrations for existing databases
+  runLabelsColumnMigration();
+  runSkillStateColumnMigration();
+  runTraceLinkingMigration();
+}
+
+/**
+ * Migration to add labels column to traces table
+ */
+function runLabelsColumnMigration(): void {
+  const database = getDatabase();
+
+  // Check if labels column exists
+  const columns = database
+    .prepare("PRAGMA table_info(traces)")
+    .all() as { name: string }[];
+
+  const hasLabels = columns.some((c) => c.name === 'labels');
+
+  if (!hasLabels) {
+    database.exec(`
+      ALTER TABLE traces ADD COLUMN labels JSON DEFAULT '{}';
+    `);
+  }
+}
+
+/**
+ * Migration to add state column to skill_registry table
+ */
+function runSkillStateColumnMigration(): void {
+  const database = getDatabase();
+
+  // Check if state column exists
+  const columns = database
+    .prepare("PRAGMA table_info(skill_registry)")
+    .all() as { name: string }[];
+
+  const hasState = columns.some((c) => c.name === 'state');
+
+  if (!hasState) {
+    // Add state column with default 'active' for existing skills
+    database.exec(`
+      ALTER TABLE skill_registry ADD COLUMN state TEXT DEFAULT 'active';
+    `);
+
+    // Create index for state queries
+    database.exec(`
+      CREATE INDEX IF NOT EXISTS idx_skills_state
+        ON skill_registry(state, name);
+    `);
+  }
+}
+
+/**
+ * Migration to add trace linking columns
+ */
+function runTraceLinkingMigration(): void {
+  const database = getDatabase();
+
+  // Check if columns exist
+  const columns = database
+    .prepare("PRAGMA table_info(traces)")
+    .all() as { name: string }[];
+
+  const hasTaskId = columns.some((c) => c.name === 'task_id');
+  const hasDocumentId = columns.some((c) => c.name === 'document_id');
+  const hasMessageId = columns.some((c) => c.name === 'message_id');
+
+  if (!hasTaskId) {
+    database.exec(`ALTER TABLE traces ADD COLUMN task_id TEXT;`);
+  }
+  if (!hasDocumentId) {
+    database.exec(`ALTER TABLE traces ADD COLUMN document_id TEXT;`);
+  }
+  if (!hasMessageId) {
+    database.exec(`ALTER TABLE traces ADD COLUMN message_id TEXT;`);
+  }
+
+  // Create indexes for lookup
+  if (!hasTaskId) {
+    database.exec(`CREATE INDEX IF NOT EXISTS idx_traces_task ON traces(task_id);`);
+  }
+  if (!hasDocumentId) {
+    database.exec(`CREATE INDEX IF NOT EXISTS idx_traces_document ON traces(document_id);`);
+  }
+  if (!hasMessageId) {
+    database.exec(`CREATE INDEX IF NOT EXISTS idx_traces_message ON traces(message_id);`);
+  }
 }
 
 /**

@@ -20,6 +20,22 @@ import { z } from 'zod';
 // ============================================================================
 
 /**
+ * Skill lifecycle states
+ */
+export type SkillState = 'draft' | 'tested' | 'approved' | 'active' | 'deprecated';
+
+/**
+ * Valid state transitions
+ */
+export const SkillStateTransitions: Record<SkillState, SkillState[]> = {
+  draft: ['tested', 'deprecated'],
+  tested: ['approved', 'draft', 'deprecated'],
+  approved: ['active', 'tested', 'deprecated'],
+  active: ['deprecated'],
+  deprecated: [], // Terminal state
+};
+
+/**
  * A published skill in the registry
  */
 export interface PublishedSkill {
@@ -31,6 +47,7 @@ export interface PublishedSkill {
   checksum: string;
   publishedAt: string;
   publishedBy?: string;
+  state: SkillState;
 }
 
 /**
@@ -41,6 +58,8 @@ export interface SkillListOptions {
   tags?: string[];
   limit?: number;
   offset?: number;
+  state?: SkillState;
+  includeDeprecated?: boolean;
 }
 
 /**
@@ -60,10 +79,12 @@ export class SkillRegistry {
   /**
    * Publish a skill to the registry
    * If the version already exists, it will be rejected (immutable)
+   * Skills are published in 'draft' state by default
    */
   publish(
     manifest: SkillManifest,
-    publishedBy?: string
+    publishedBy?: string,
+    initialState: SkillState = 'draft'
   ): PublishedSkill {
     const db = getDatabase();
 
@@ -86,8 +107,8 @@ export class SkillRegistry {
 
     const stmt = db.prepare(`
       INSERT INTO skill_registry (
-        name, version, description, manifest, instructions, checksum, published_at, published_by
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        name, version, description, manifest, instructions, checksum, published_at, published_by, state
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
@@ -98,7 +119,8 @@ export class SkillRegistry {
       validated.instructions,
       checksum,
       publishedAt,
-      publishedBy || null
+      publishedBy || null,
+      initialState
     );
 
     return {
@@ -110,17 +132,31 @@ export class SkillRegistry {
       checksum,
       publishedAt,
       publishedBy,
+      state: initialState,
     };
   }
 
   /**
    * Get a skill by name and version
    * If version is 'latest' or not provided, returns the latest version
+   * By default, only returns active skills unless state is specified
    */
-  get(name: string, version?: string): PublishedSkill | null {
+  get(name: string, version?: string, options?: { state?: SkillState; anyState?: boolean }): PublishedSkill | null {
     const db = getDatabase();
 
     let row: SkillRow | undefined;
+
+    // Build state filter
+    let stateClause = '';
+    const stateParams: string[] = [];
+    if (options?.state) {
+      stateClause = ' AND state = ?';
+      stateParams.push(options.state);
+    } else if (!options?.anyState) {
+      // Default: return active skills only for execution
+      stateClause = ' AND state = ?';
+      stateParams.push('active');
+    }
 
     if (!version || version === 'latest') {
       // Get latest version (by semver sorting)
@@ -128,7 +164,7 @@ export class SkillRegistry {
         .prepare(
           `
           SELECT * FROM skill_registry 
-          WHERE name = ?
+          WHERE name = ? ${stateClause}
           ORDER BY 
             CAST(SUBSTR(version, 1, INSTR(version, '.') - 1) AS INTEGER) DESC,
             CAST(SUBSTR(SUBSTR(version, INSTR(version, '.') + 1), 1, 
@@ -137,16 +173,23 @@ export class SkillRegistry {
           LIMIT 1
         `
         )
-        .get(name) as SkillRow | undefined;
+        .get(name, ...stateParams) as SkillRow | undefined;
     } else {
       row = db
-        .prepare('SELECT * FROM skill_registry WHERE name = ? AND version = ?')
-        .get(name, version) as SkillRow | undefined;
+        .prepare(`SELECT * FROM skill_registry WHERE name = ? AND version = ? ${stateClause}`)
+        .get(name, version, ...stateParams) as SkillRow | undefined;
     }
 
     if (!row) return null;
 
     return this.rowToSkill(row);
+  }
+
+  /**
+   * Get a skill by name and version without state filtering (for admin operations)
+   */
+  getAnyState(name: string, version?: string): PublishedSkill | null {
+    return this.get(name, version, { anyState: true });
   }
 
   /**
@@ -184,6 +227,15 @@ export class SkillRegistry {
       conditions.push('(name LIKE ? OR description LIKE ? OR instructions LIKE ?)');
       const searchTerm = `%${query}%`;
       params.push(searchTerm, searchTerm, searchTerm);
+    }
+
+    // Filter by state
+    if (options?.state) {
+      conditions.push('state = ?');
+      params.push(options.state);
+    } else if (!options?.includeDeprecated) {
+      // By default, exclude deprecated skills
+      conditions.push("state != 'deprecated'");
     }
 
     // Get latest version of each skill
@@ -297,6 +349,91 @@ export class SkillRegistry {
   }
 
   /**
+   * Get the current state of a skill
+   */
+  getState(name: string, version: string): SkillState | null {
+    const skill = this.getAnyState(name, version);
+    return skill?.state ?? null;
+  }
+
+  /**
+   * Set the state of a skill (bypasses transition validation)
+   * Use promote() for validated state transitions
+   */
+  setState(name: string, version: string, state: SkillState): boolean {
+    const db = getDatabase();
+
+    const result = db
+      .prepare('UPDATE skill_registry SET state = ? WHERE name = ? AND version = ?')
+      .run(state, name, version);
+
+    return result.changes > 0;
+  }
+
+  /**
+   * Promote a skill to a new state with validation
+   * Only allows valid state transitions
+   */
+  promote(
+    name: string,
+    version: string,
+    targetState: SkillState
+  ): { success: boolean; error?: string; skill?: PublishedSkill } {
+    const skill = this.getAnyState(name, version);
+
+    if (!skill) {
+      return { success: false, error: 'Skill not found' };
+    }
+
+    const currentState = skill.state;
+    const allowedTransitions = SkillStateTransitions[currentState];
+
+    if (!allowedTransitions.includes(targetState)) {
+      return {
+        success: false,
+        error: `Invalid state transition: ${currentState} -> ${targetState}. Allowed: ${allowedTransitions.join(', ') || 'none'}`,
+      };
+    }
+
+    const updated = this.setState(name, version, targetState);
+    if (!updated) {
+      return { success: false, error: 'Failed to update state' };
+    }
+
+    // Return updated skill
+    const updatedSkill = this.getAnyState(name, version);
+    return { success: true, skill: updatedSkill ?? undefined };
+  }
+
+  /**
+   * Get skills by state
+   */
+  getByState(state: SkillState, limit: number = 100): PublishedSkill[] {
+    const db = getDatabase();
+
+    const rows = db
+      .prepare(
+        `
+        SELECT * FROM skill_registry 
+        WHERE state = ?
+        ORDER BY name, published_at DESC
+        LIMIT ?
+      `
+      )
+      .all(state, limit) as SkillRow[];
+
+    return rows.map((row) => this.rowToSkill(row));
+  }
+
+  /**
+   * Check if a skill is executable (state is 'active')
+   */
+  isExecutable(name: string, version?: string): boolean {
+    const skill = this.get(name, version, { state: 'active' });
+    return skill !== null;
+  }
+
+  /**
    * Convert database row to PublishedSkill
    */
   private rowToSkill(row: SkillRow): PublishedSkill {
@@ -311,6 +448,7 @@ export class SkillRegistry {
       checksum: row.checksum || '',
       publishedAt: row.published_at,
       publishedBy: row.published_by || undefined,
+      state: (row.state as SkillState) || 'active',
     };
   }
 }
@@ -328,6 +466,7 @@ interface SkillRow {
   checksum: string | null;
   published_at: string;
   published_by: string | null;
+  state: string | null;
 }
 
 // ============================================================================

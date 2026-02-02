@@ -133,3 +133,25 @@ describe("/api/agents/send", () => {
     expect(createTask).not.toHaveBeenCalled();
   });
 });
+
+describe("Ops console auth guardrails", () => {
+  it("requires Authorization header for /ops/api/me", async () => {
+    const app = buildApp();
+    const response = await app.inject({
+      method: "GET",
+      url: "/ops/api/me"
+    });
+
+    expect(response.statusCode).toBe(401);
+  });
+
+  it("requires Authorization header for /ops/api/traces", async () => {
+    const app = buildApp();
+    const response = await app.inject({
+      method: "GET",
+      url: "/ops/api/traces"
+    });
+
+    expect(response.statusCode).toBe(401);
+  });
+});

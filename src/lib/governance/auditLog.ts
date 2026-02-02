@@ -24,6 +24,8 @@ export type AuditEventType =
   | 'tool_permission_denied'
   | 'skill_published'
   | 'skill_test_run'
+  | 'skill_state_changed'
+  | 'skill_deprecated_used'
   | 'budget_warning'
   | 'budget_exceeded'
   | 'workspace_change'

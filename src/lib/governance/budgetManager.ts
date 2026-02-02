@@ -68,6 +68,73 @@ export interface BudgetStats {
   daysRemaining: number;
 }
 
+/**
+ * Cost forecast request
+ */
+export interface CostForecastRequest {
+  tenantId: string;
+  promptSize: number; // Estimated input tokens
+  maxOutputTokens?: number; // Estimated output tokens
+  model: string;
+  provider?: string;
+}
+
+/**
+ * Cost forecast result
+ */
+export interface CostForecastResult {
+  estimatedCost: number;
+  inputCost: number;
+  outputCost: number;
+  budgetAllowed: boolean;
+  budgetRemaining: number;
+  wouldExceedBudget: boolean;
+  warning?: string;
+  details: {
+    inputTokens: number;
+    outputTokens: number;
+    model: string;
+    inputPricePerToken: number;
+    outputPricePerToken: number;
+  };
+}
+
+/**
+ * Model pricing (per 1000 tokens)
+ */
+export const ModelPricing: Record<string, { input: number; output: number }> = {
+  // OpenAI
+  'gpt-4': { input: 0.03, output: 0.06 },
+  'gpt-4-turbo': { input: 0.01, output: 0.03 },
+  'gpt-4o': { input: 0.005, output: 0.015 },
+  'gpt-4o-mini': { input: 0.00015, output: 0.0006 },
+  'gpt-3.5-turbo': { input: 0.0005, output: 0.0015 },
+  // Anthropic
+  'claude-3-opus': { input: 0.015, output: 0.075 },
+  'claude-3-sonnet': { input: 0.003, output: 0.015 },
+  'claude-3-haiku': { input: 0.00025, output: 0.00125 },
+  'claude-3.5-sonnet': { input: 0.003, output: 0.015 },
+  // Default fallback
+  'default': { input: 0.01, output: 0.03 },
+};
+
+// ============================================================================
+// Errors
+// ============================================================================
+
+/**
+ * Error thrown when budget is exceeded with hard limit
+ */
+export class BudgetExceededError extends Error {
+  public readonly forecast: CostForecastResult;
+
+  constructor(message: string, forecast: CostForecastResult) {
+    super(message);
+    this.name = 'BudgetExceededError';
+    this.forecast = forecast;
+  }
+}
+
 // ============================================================================
 // Budget Manager Class
 // ============================================================================
@@ -382,6 +449,80 @@ export class BudgetManager {
       .all(threshold) as BudgetRow[];
 
     return rows.map((row) => this.rowToBudget(row));
+  }
+
+  /**
+   * Forecast cost before execution
+   * Returns estimated cost and whether the budget allows it
+   */
+  forecastCost(request: CostForecastRequest): CostForecastResult {
+    const { tenantId, promptSize, maxOutputTokens = 1000, model } = request;
+
+    // Get pricing for the model
+    const pricing = ModelPricing[model] || ModelPricing['default'];
+    const inputPricePerToken = pricing.input / 1000;
+    const outputPricePerToken = pricing.output / 1000;
+
+    // Calculate estimated cost
+    const inputCost = promptSize * inputPricePerToken;
+    const outputCost = maxOutputTokens * outputPricePerToken;
+    const estimatedCost = inputCost + outputCost;
+
+    // Check budget
+    const budget = this.getBudget(tenantId);
+    let budgetAllowed = true;
+    let budgetRemaining = Infinity;
+    let wouldExceedBudget = false;
+    let warning: string | undefined;
+
+    if (budget) {
+      budgetRemaining = budget.budgetUsd - budget.spentUsd;
+      wouldExceedBudget = estimatedCost > budgetRemaining;
+
+      if (wouldExceedBudget) {
+        if (budget.hardLimit) {
+          budgetAllowed = false;
+        } else {
+          warning = `Estimated cost ($${estimatedCost.toFixed(4)}) exceeds remaining budget ($${budgetRemaining.toFixed(4)})`;
+        }
+      } else if (budget.spentUsd + estimatedCost > budget.budgetUsd * budget.alertThreshold) {
+        warning = `This request will bring budget usage above ${(budget.alertThreshold * 100).toFixed(0)}% threshold`;
+      }
+    }
+
+    return {
+      estimatedCost,
+      inputCost,
+      outputCost,
+      budgetAllowed,
+      budgetRemaining,
+      wouldExceedBudget,
+      warning,
+      details: {
+        inputTokens: promptSize,
+        outputTokens: maxOutputTokens,
+        model,
+        inputPricePerToken,
+        outputPricePerToken,
+      },
+    };
+  }
+
+  /**
+   * Fail-fast check before execution
+   * Throws an error if budget would be exceeded with hard limit
+   */
+  checkBeforeExecution(request: CostForecastRequest): CostForecastResult {
+    const forecast = this.forecastCost(request);
+
+    if (!forecast.budgetAllowed) {
+      throw new BudgetExceededError(
+        `Budget exceeded: estimated cost $${forecast.estimatedCost.toFixed(4)}, remaining $${forecast.budgetRemaining.toFixed(4)}`,
+        forecast
+      );
+    }
+
+    return forecast;
   }
 
   // ============================================================================

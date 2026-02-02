@@ -328,7 +328,9 @@ export function parseToolCalls(
         });
       } catch {
         // Invalid JSON in arguments, skip
-        console.error(`Failed to parse tool call arguments for ${tc.function.name}`);
+        if (process.env.WOMBAT_TEST_MODE !== 'true') {
+          console.error(`Failed to parse tool call arguments for ${tc.function.name}`);
+        }
       }
     }
   }

@@ -14,7 +14,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
-  <img src="https://img.shields.io/badge/version-1.0.0-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-1.1.0-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/built_with-TypeScript-blue.svg" alt="TypeScript">
   <img src="https://img.shields.io/badge/status-Beta-yellow.svg" alt="Status">
 </p>
@@ -25,13 +25,13 @@
 
 | Pillar | Description |
 |--------|-------------|
-| **Agent Observability** | Full execution traces with replay & diff |
-| **Skill Runtime** | Versioned YAML manifests with testing |
-| **Governance & Safety** | Tenant isolation, permissions, audit logs, redaction |
+| **Agent Observability** | Full execution traces with replay, diff, annotations & retention policies |
+| **Skill Runtime** | Versioned YAML manifests with lifecycle states and testing |
+| **Governance & Safety** | Tenant isolation, permissions, audit logs, redaction, risk scoring |
 | **Provider Abstraction** | Normalized interface across LLM providers |
-| **Operational Tooling** | Budget controls, workspace versioning, evaluations |
+| **Operational Tooling** | Budget controls, cost forecasting, workspace pinning, environments, impact analysis |
 
-**Stack**: TypeScript + Fastify + SQLite | Multi-provider LLM | Full tracing | Budget controls
+**Stack**: TypeScript + Fastify + SQLite | Multi-provider LLM | Full tracing | Budget controls | Risk scoring
 
 Inspired by [OpenClaw](https://openclaw.ai/)'s workspace pattern, Wombat Ops brings operational guarantees, governance, and observability to AI agents in production.
 
@@ -50,10 +50,16 @@ Inspired by [OpenClaw](https://openclaw.ai/)'s workspace pattern, Wombat Ops bri
 **Observability**
 - Every request gets a trace ID for correlation
 - Full traces: LLM calls, tool calls, costs, timing
-- Replay and diff for debugging
+- Trace diff API for debugging regressions
+- Labels & annotations for trace organization
+- Per-tenant retention policies
+- Entity linking (task, document, message)
+- Operations Console at `/ops` (OIDC + RBAC)
 
 **Governance**
 - Per-tenant budget controls with hard/soft limits
+- Cost forecasting before execution
+- Risk scoring based on tool breadth, skill maturity, temperature, and data sensitivity
 - Tool permission system with skill declarations
 - Immutable audit logs for compliance
 - PII redaction with configurable patterns
@@ -61,8 +67,12 @@ Inspired by [OpenClaw](https://openclaw.ai/)'s workspace pattern, Wombat Ops bri
 **Skills & Versioning**
 - Structured YAML skill manifests
 - Skill registry with immutable versions
+- Skill lifecycle states (draft → tested → approved → active → deprecated)
 - Built-in test harness
 - Workspace versioning with rollback
+- Workspace pinning per environment (dev/staging/prod)
+- Environment promotion flows
+- Impact analysis before changes
 
 ---
 
@@ -129,6 +139,22 @@ npm run dev
 npm run build && npm start
 ```
 
+### Ops Console (v1.2)
+
+The Operations Console is served from the same daemon at `/ops` and is protected by OIDC + RBAC.
+
+Required env vars:
+
+```
+OPS_OIDC_ISSUER=
+OPS_OIDC_AUDIENCE=
+OPS_OIDC_JWKS_URL=
+OPS_RBAC_CLAIM=roles
+OPS_TENANT_CLAIM=tenant_id
+OPS_WORKSPACE_CLAIM=workspace_id
+OPS_ALLOWED_TENANTS_CLAIM=allowed_tenants
+```
+
 ---
 
 ## API at a Glance
@@ -151,6 +177,11 @@ npm run build && npm start
 | `GET /traces/:id` | Get full trace details |
 | `GET /traces/:id/replay` | Get replay context for a trace |
 | `GET /traces/stats` | Trace statistics |
+| `POST /traces/diff` | Compare two traces (v1.1) |
+| `POST /traces/:id/label` | Add labels to traces (v1.1) |
+| `POST /traces/:id/annotate` | Add annotations (v1.1) |
+| `GET /traces/by-label` | Find traces by label (v1.1) |
+| `GET /traces/by-entity` | Find traces by entity link (v1.1) |
 
 ### Skills & Registry
 
@@ -161,6 +192,9 @@ npm run build && npm start
 | `GET /skills/registry/:name/versions` | List all versions of a skill |
 | `POST /skills/registry/:name/test` | Run skill tests |
 | `GET /skills` | List loaded workspace skills |
+| `POST /skills/:name/:version/promote` | Promote skill lifecycle state (v1.1) |
+| `GET /skills/:name/:version/state` | Get skill state (v1.1) |
+| `GET /skills/by-state` | List skills by state (v1.1) |
 
 ### Governance
 
@@ -171,6 +205,37 @@ npm run build && npm start
 | `GET /budget` | Get tenant budget |
 | `POST /budget` | Set tenant budget |
 | `POST /budget/check` | Check if spend is within budget |
+| `POST /cost/forecast` | Pre-execution cost estimate (v1.1) |
+| `POST /risk/score` | Calculate execution risk score (v1.1) |
+
+### Retention (v1.1)
+
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /retention/policy` | Set tenant retention policy |
+| `GET /retention/policy` | Get retention policy |
+| `POST /retention/enforce` | Enforce retention (cleanup old traces) |
+| `GET /retention/stats` | Retention statistics |
+
+### Workspace (v1.1)
+
+| Endpoint | Purpose |
+|----------|---------|
+| `POST /workspace/pin` | Pin workspace version |
+| `GET /workspace/pin` | Get workspace pin |
+| `GET /workspace/:id/pins` | List all pins for workspace |
+| `POST /workspace/envs` | Create/update environment |
+| `GET /workspace/envs` | List environments |
+| `POST /workspace/envs/promote` | Promote between environments |
+| `POST /workspace/envs/init` | Initialize standard environments |
+| `POST /workspace/impact` | Analyze change impact |
+
+### Control Plane (v1.1)
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/version` | Wombat version and features |
+| `GET /api/compatibility` | Check control plane compatibility |
 
 ### Evaluations
 
@@ -208,14 +273,14 @@ The library is organized into logical modules:
 src/lib/
 ├── core/           # Database, config
 ├── auth/           # Authentication, tenant context
-├── tracing/        # Trace model, trace store
-├── skills/         # Skill manifest, registry, testing
+├── tracing/        # Trace model, store, diff, annotations, retention
+├── skills/         # Skill manifest, registry, testing, lifecycle
 ├── tools/          # Tool proxy, permissions
-├── governance/     # Audit logs, redaction, budgets
+├── governance/     # Audit logs, redaction, budgets, risk scoring
 ├── providers/      # LLM providers, contracts
-├── workspace/      # Workspace management, versioning
+├── workspace/      # Workspace mgmt, versioning, pins, environments, impact
 ├── evals/          # Evaluation framework
-└── integrations/   # Mission Control, webhooks, costs
+└── integrations/   # Mission Control, webhooks, costs, control plane version
 ```
 
 ---

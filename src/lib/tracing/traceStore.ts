@@ -20,6 +20,8 @@ export interface TraceListOptions {
   endDate?: string;
   limit?: number;
   offset?: number;
+  label?: string;
+  labelValue?: string;
 }
 
 export interface TraceListResult {
@@ -53,14 +55,16 @@ export class TraceStore {
         model, provider, workspace_hash,
         input_message, input_message_count,
         output_message, input_tokens, output_tokens, total_cost,
-        steps, tool_calls, skill_versions, redacted_prompt, error
+        steps, tool_calls, skill_versions, redacted_prompt, error, labels,
+        task_id, document_id, message_id
       ) VALUES (
         ?, ?, ?, ?,
         ?, ?, ?,
         ?, ?, ?,
         ?, ?,
         ?, ?, ?, ?,
-        ?, ?, ?, ?, ?
+        ?, ?, ?, ?, ?, ?,
+        ?, ?, ?
       )
     `);
 
@@ -85,7 +89,11 @@ export class TraceStore {
       JSON.stringify(trace.output?.toolCalls || []),
       JSON.stringify(trace.skillVersions),
       trace.redactedPrompt || null,
-      trace.error || null
+      trace.error || null,
+      JSON.stringify(trace.labels || {}),
+      trace.taskId || null,
+      trace.documentId || null,
+      trace.messageId || null
     );
   }
 
@@ -288,6 +296,97 @@ export class TraceStore {
   }
 
   /**
+   * Set labels for a trace
+   */
+  setLabels(id: string, labels: Record<string, string>): boolean {
+    const db = getDatabase();
+
+    const result = db
+      .prepare('UPDATE traces SET labels = ? WHERE id = ?')
+      .run(JSON.stringify(labels), id);
+
+    return result.changes > 0;
+  }
+
+  /**
+   * Add or update a single label
+   */
+  setLabel(id: string, key: string, value: string): boolean {
+    const trace = this.get(id);
+    if (!trace) return false;
+
+    const labels = trace.labels || {};
+    labels[key] = value;
+
+    return this.setLabels(id, labels);
+  }
+
+  /**
+   * Remove a label
+   */
+  removeLabel(id: string, key: string): boolean {
+    const trace = this.get(id);
+    if (!trace) return false;
+
+    const labels = trace.labels || {};
+    delete labels[key];
+
+    return this.setLabels(id, labels);
+  }
+
+  /**
+   * Get labels for a trace
+   */
+  getLabels(id: string): Record<string, string> | null {
+    const trace = this.get(id);
+    if (!trace) return null;
+
+    return trace.labels || {};
+  }
+
+  /**
+   * Find traces by label
+   */
+  findByLabel(
+    tenantId: string,
+    labelKey: string,
+    labelValue?: string,
+    limit: number = 100
+  ): AgentTrace[] {
+    const db = getDatabase();
+
+    // SQLite JSON queries for label matching
+    let rows;
+    if (labelValue !== undefined) {
+      rows = db
+        .prepare(
+          `
+          SELECT * FROM traces 
+          WHERE tenant_id = ? 
+            AND json_extract(labels, '$.' || ?) = ?
+          ORDER BY started_at DESC
+          LIMIT ?
+        `
+        )
+        .all(tenantId, labelKey, labelValue, limit) as TraceRow[];
+    } else {
+      rows = db
+        .prepare(
+          `
+          SELECT * FROM traces 
+          WHERE tenant_id = ? 
+            AND json_extract(labels, '$.' || ?) IS NOT NULL
+          ORDER BY started_at DESC
+          LIMIT ?
+        `
+        )
+        .all(tenantId, labelKey, limit) as TraceRow[];
+    }
+
+    return rows.map((row) => this.rowToTrace(row));
+  }
+
+  /**
    * Convert a database row to an AgentTrace
    */
   private rowToTrace(row: TraceRow): AgentTrace {
@@ -296,6 +395,7 @@ export class TraceStore {
     const skillVersions: Record<string, string> = JSON.parse(
       row.skill_versions || '{}'
     );
+    const labels: Record<string, string> = JSON.parse(row.labels || '{}');
 
     return {
       id: row.id,
@@ -327,7 +427,56 @@ export class TraceStore {
       },
       redactedPrompt: row.redacted_prompt || undefined,
       error: row.error || undefined,
+      labels: Object.keys(labels).length > 0 ? labels : undefined,
+      taskId: row.task_id || undefined,
+      documentId: row.document_id || undefined,
+      messageId: row.message_id || undefined,
     };
+  }
+
+  /**
+   * Find traces by task ID
+   */
+  findByTaskId(taskId: string, limit: number = 100): AgentTrace[] {
+    const db = getDatabase();
+
+    const rows = db
+      .prepare(
+        `SELECT * FROM traces WHERE task_id = ? ORDER BY started_at DESC LIMIT ?`
+      )
+      .all(taskId, limit) as TraceRow[];
+
+    return rows.map((row) => this.rowToTrace(row));
+  }
+
+  /**
+   * Find traces by document ID
+   */
+  findByDocumentId(documentId: string, limit: number = 100): AgentTrace[] {
+    const db = getDatabase();
+
+    const rows = db
+      .prepare(
+        `SELECT * FROM traces WHERE document_id = ? ORDER BY started_at DESC LIMIT ?`
+      )
+      .all(documentId, limit) as TraceRow[];
+
+    return rows.map((row) => this.rowToTrace(row));
+  }
+
+  /**
+   * Find traces by message ID
+   */
+  findByMessageId(messageId: string, limit: number = 100): AgentTrace[] {
+    const db = getDatabase();
+
+    const rows = db
+      .prepare(
+        `SELECT * FROM traces WHERE message_id = ? ORDER BY started_at DESC LIMIT ?`
+      )
+      .all(messageId, limit) as TraceRow[];
+
+    return rows.map((row) => this.rowToTrace(row));
   }
 }
 
@@ -357,6 +506,10 @@ interface TraceRow {
   skill_versions: string;
   redacted_prompt: string | null;
   error: string | null;
+  labels: string | null;
+  task_id: string | null;
+  document_id: string | null;
+  message_id: string | null;
 }
 
 // ============================================================================

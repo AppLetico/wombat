@@ -151,18 +151,26 @@ Wombat maintains an immutable, append-only audit log for compliance and debuggin
 
 | Event Type | Description |
 |------------|-------------|
-| `agent.start` | Agent execution started |
-| `agent.complete` | Agent execution completed successfully |
-| `agent.error` | Agent execution failed |
-| `tool.call` | Tool was called |
-| `tool.denied` | Tool call was blocked |
-| `skill.publish` | Skill published to registry |
-| `skill.test` | Skill tests executed |
-| `budget.exceeded` | Request exceeded budget |
-| `budget.warning` | Approaching budget limit |
-| `permission.denied` | Permission check failed |
-| `workspace.snapshot` | Workspace version created |
-| `workspace.rollback` | Workspace rolled back |
+| `agent_execution_started` | Agent execution started |
+| `agent_execution_completed` | Agent execution completed successfully |
+| `agent_execution_failed` | Agent execution failed |
+| `tool_call_requested` | Tool call requested |
+| `tool_call_succeeded` | Tool call succeeded |
+| `tool_call_failed` | Tool call failed |
+| `tool_permission_denied` | Tool call blocked |
+| `skill_published` | Skill published to registry |
+| `skill_test_run` | Skill tests executed |
+| `skill_state_changed` | Skill lifecycle state updated |
+| `skill_deprecated_used` | Deprecated skill executed |
+| `budget_warning` | Approaching budget limit |
+| `budget_exceeded` | Request exceeded budget |
+| `workspace_change` | Workspace pin/promotion/rollback |
+| `auth_success` | Auth success |
+| `auth_failure` | Auth failure |
+| `rate_limit_exceeded` | Rate limit exceeded |
+| `config_change` | Configuration updated |
+| `system_startup` | System startup |
+| `system_shutdown` | System shutdown |
 
 ### Audit Entry Structure
 
@@ -185,7 +193,7 @@ interface AuditEntry {
 GET /audit?tenant_id=tenant-123
 
 # All permission denials
-GET /audit?event_type=permission.denied
+GET /audit?event_type=tool_permission_denied
 
 # Events in time range
 GET /audit?start_time=2026-02-01T00:00:00Z&end_time=2026-02-02T00:00:00Z
@@ -203,6 +211,31 @@ Audit logs are retained indefinitely by default. To purge old entries:
 const auditLog = getAuditLog();
 auditLog.purgeOlderThan(new Date('2025-01-01'));
 ```
+
+---
+
+## Ops Console Access (OIDC + RBAC)
+
+The Operations Console (`/ops`) is protected by OIDC JWTs and role-based access control.
+
+Required env vars:
+
+```bash
+OPS_OIDC_ISSUER=
+OPS_OIDC_AUDIENCE=
+OPS_OIDC_JWKS_URL=
+OPS_RBAC_CLAIM=roles
+OPS_TENANT_CLAIM=tenant_id
+OPS_WORKSPACE_CLAIM=workspace_id
+OPS_ALLOWED_TENANTS_CLAIM=allowed_tenants
+```
+
+Minimum roles:
+
+- `viewer`: read-only ops access
+- `operator`: annotations and incident labeling
+- `release_manager`: promotions and rollbacks
+- `admin`: skill lifecycle changes
 
 ---
 

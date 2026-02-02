@@ -1,5 +1,25 @@
 # API
 
+## Ops Console (v1.2)
+
+All Ops Console endpoints require `Authorization: Bearer <OIDC JWT>`.
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /ops` | Operations Console UI |
+| `GET /ops/api/me` | Current user and RBAC context |
+| `GET /ops/api/traces` | Trace list (view-model) |
+| `GET /ops/api/traces/:id` | Trace detail (view-model) |
+| `POST /ops/api/traces/diff` | Trace diff (summary + highlights) |
+| `POST /ops/api/workspaces/:workspaceId/promotions/check` | Promotion pre-checks |
+| `POST /ops/api/workspaces/:workspaceId/promotions/execute` | Execute promotion (annotation required) |
+| `GET /ops/api/workspaces/:workspaceId/versions` | Workspace version history |
+| `POST /ops/api/workspaces/:workspaceId/rollback` | Rollback workspace (annotation required) |
+| `GET /ops/api/skills/registry` | Skill ops view (usage + permissions) |
+| `POST /ops/api/skills/:name/:version/promote` | Promote skill lifecycle state |
+| `GET /ops/api/dashboards/cost` | Cost dashboard aggregates |
+| `GET /ops/api/dashboards/risk` | Risk dashboard aggregates |
+
 ## POST /api/agents/send
 
 Send a message to an agent session. The daemon generates a response and writes it to Mission Control.
@@ -603,6 +623,8 @@ List traces with optional filtering.
 | `tenant_id` | Filter by tenant ID |
 | `agent_id` | Filter by agent ID |
 | `status` | Filter by status (`success`, `error`, `timeout`) |
+| `label` | Filter by label key |
+| `label_value` | Filter by label value (requires `label`) |
 | `limit` | Maximum results (default: 50, max: 100) |
 | `offset` | Pagination offset |
 
@@ -620,7 +642,8 @@ List traces with optional filtering.
       "end_time": "2026-02-01T19:30:02.500Z",
       "duration_ms": 2500,
       "total_tokens": 1500,
-      "total_cost": 0.00025
+      "total_cost": 0.00025,
+      "labels": { "baseline": "true" }
     }
   ],
   "total": 42,
@@ -648,6 +671,10 @@ Get full trace details including all steps.
   "start_time": "2026-02-01T19:30:00.000Z",
   "end_time": "2026-02-01T19:30:02.500Z",
   "duration_ms": 2500,
+  "labels": { "baseline": "true" },
+  "task_id": "task-456",
+  "document_id": "doc-789",
+  "message_id": "msg-012",
   "steps": [
     {
       "type": "llm_call",
@@ -676,6 +703,161 @@ Get full trace details including all steps.
     "totalCost": 0.00025,
     "currency": "USD"
   }
+}
+```
+
+---
+
+## POST /traces/diff (v1.1)
+
+Compare two traces and return differences.
+
+### Request Body
+
+```json
+{
+  "base_trace_id": "trace-id-1",
+  "compare_trace_id": "trace-id-2",
+  "include_summary": true
+}
+```
+
+### Response
+
+```json
+{
+  "diff": {
+    "traceIds": { "base": "trace-id-1", "compare": "trace-id-2" },
+    "model": { "changed": true, "baseModel": "gpt-4", "compareModel": "gpt-4o-mini" },
+    "cost": { "baseCost": 0.05, "compareCost": 0.01, "delta": -0.04, "percentChange": -80 },
+    "skills": { "added": {}, "removed": {}, "changed": { "summarize": { "base": "1.0.0", "compare": "1.1.0" } } },
+    "toolCalls": { "baseCount": 3, "compareCount": 2 },
+    "summary": { "totalDifferences": 4, "significantChanges": ["model", "cost", "skills"] }
+  },
+  "summary_text": "Compared traces trace-id-1 vs trace-id-2: Model changed (gpt-4 → gpt-4o-mini), cost decreased by 80%..."
+}
+```
+
+---
+
+## POST /traces/:id/label (v1.1)
+
+Add or update labels on a trace.
+
+### Request Body
+
+```json
+{
+  "labels": {
+    "baseline": "true",
+    "reviewed": "approved"
+  }
+}
+```
+
+### Response
+
+```json
+{
+  "status": "ok",
+  "trace_id": "trace-id",
+  "labels": { "baseline": "true", "reviewed": "approved" }
+}
+```
+
+---
+
+## POST /traces/:id/annotate (v1.1)
+
+Add an annotation to a trace (append-only).
+
+### Request Body
+
+```json
+{
+  "key": "incident",
+  "value": "INC-123",
+  "created_by": "user@example.com"
+}
+```
+
+### Response
+
+```json
+{
+  "status": "ok",
+  "annotation": {
+    "id": 1,
+    "traceId": "trace-id",
+    "key": "incident",
+    "value": "INC-123",
+    "createdAt": "2026-02-01T19:30:00.000Z",
+    "createdBy": "user@example.com"
+  }
+}
+```
+
+---
+
+## GET /traces/:id/annotations (v1.1)
+
+Get all annotations for a trace.
+
+### Response
+
+```json
+{
+  "annotations": [
+    { "id": 1, "key": "incident", "value": "INC-123", "createdAt": "..." },
+    { "id": 2, "key": "reviewed", "value": "true", "createdAt": "..." }
+  ]
+}
+```
+
+---
+
+## GET /traces/by-label (v1.1)
+
+Find traces by label.
+
+### Query Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `label` | Label key to search for |
+| `value` | Optional label value to match |
+| `limit` | Maximum results |
+
+### Response
+
+```json
+{
+  "traces": ["trace-id-1", "trace-id-2"],
+  "total": 2
+}
+```
+
+---
+
+## GET /traces/by-entity (v1.1)
+
+Find traces linked to a specific entity (task, document, message).
+
+### Query Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `task_id` | Find traces for this task |
+| `document_id` | Find traces for this document |
+| `message_id` | Find traces for this message |
+| `limit` | Maximum results |
+
+### Response
+
+```json
+{
+  "traces": [...],
+  "total": 5
 }
 ```
 
@@ -715,6 +897,114 @@ Get trace statistics.
   "avg_duration_ms": 1850,
   "total_tokens": 2500000,
   "total_cost": 0.42
+}
+```
+
+---
+
+# Retention Policies (v1.1)
+
+## POST /retention/policy
+
+Set or update retention policy for a tenant.
+
+### Request Body
+
+```json
+{
+  "tenant_id": "tenant-123",
+  "retention_days": 30,
+  "sampling_strategy": "full",
+  "storage_mode": "full"
+}
+```
+
+### Sampling Strategies
+
+| Strategy | Description |
+|----------|-------------|
+| `full` | Retain all traces |
+| `errors_only` | Only retain traces with errors |
+| `sampled` | Retain a percentage of traces |
+
+### Response
+
+```json
+{
+  "status": "ok",
+  "policy": { ... }
+}
+```
+
+---
+
+## GET /retention/policy
+
+Get retention policy for a tenant.
+
+### Query Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `tenant_id` | Tenant ID to query |
+
+### Response
+
+```json
+{
+  "policy": {
+    "tenantId": "tenant-123",
+    "retentionDays": 30,
+    "samplingStrategy": "full",
+    "storageMode": "full"
+  }
+}
+```
+
+---
+
+## POST /retention/enforce
+
+Enforce retention policy (delete expired traces).
+
+### Request Body
+
+```json
+{
+  "tenant_id": "tenant-123"
+}
+```
+
+### Response
+
+```json
+{
+  "status": "ok",
+  "result": {
+    "tenantId": "tenant-123",
+    "tracesDeleted": 150,
+    "oldestRemainingTrace": "2026-01-15T00:00:00.000Z"
+  }
+}
+```
+
+---
+
+## GET /retention/stats
+
+Get retention statistics.
+
+### Response
+
+```json
+{
+  "totalPolicies": 10,
+  "avgRetentionDays": 45,
+  "tenantsByStrategy": {
+    "full": 7,
+    "errors_only": 2,
+    "sampled": 1
+  }
 }
 ```
 
@@ -770,6 +1060,7 @@ instructions: |
   "skill": {
     "name": "ticket_summarizer",
     "version": "1.2.0",
+    "state": "draft",
     "checksum": "sha256:abc123...",
     "published_at": "2026-02-01T19:30:00.000Z",
     "published_by": "user-123"
@@ -795,6 +1086,7 @@ Get a skill from the registry.
 {
   "name": "ticket_summarizer",
   "version": "1.2.0",
+  "state": "active",
   "description": "Summarizes support tickets",
   "checksum": "sha256:abc123...",
   "published_at": "2026-02-01T19:30:00.000Z",
@@ -814,9 +1106,95 @@ List all versions of a skill.
 {
   "name": "ticket_summarizer",
   "versions": [
-    { "version": "1.2.0", "published_at": "2026-02-01T19:30:00.000Z" },
-    { "version": "1.1.0", "published_at": "2026-01-15T10:00:00.000Z" },
-    { "version": "1.0.0", "published_at": "2026-01-01T12:00:00.000Z" }
+    { "version": "1.2.0", "state": "active", "published_at": "2026-02-01T19:30:00.000Z" },
+    { "version": "1.1.0", "state": "deprecated", "published_at": "2026-01-15T10:00:00.000Z" },
+    { "version": "1.0.0", "state": "deprecated", "published_at": "2026-01-01T12:00:00.000Z" }
+  ]
+}
+```
+
+---
+
+## POST /skills/:name/:version/promote (v1.1)
+
+Promote a skill through lifecycle states.
+
+### Request Body
+
+```json
+{
+  "target_state": "active"
+}
+```
+
+### Skill States
+
+| State | Description |
+|-------|-------------|
+| `draft` | Initial state, not executable |
+| `tested` | Tests have passed |
+| `approved` | Manually approved |
+| `active` | Executable in production |
+| `deprecated` | Still executable but warns |
+
+### State Transitions
+
+- `draft` → `tested` (tests must pass)
+- `tested` → `approved` (optional approval step)
+- `tested` → `active` (direct promotion)
+- `approved` → `active`
+- `active` → `deprecated`
+
+### Response
+
+```json
+{
+  "status": "ok",
+  "skill": {
+    "name": "ticket_summarizer",
+    "version": "1.2.0",
+    "state": "active",
+    "previousState": "tested"
+  }
+}
+```
+
+---
+
+## GET /skills/:name/:version/state (v1.1)
+
+Get the current state of a skill.
+
+### Response
+
+```json
+{
+  "name": "ticket_summarizer",
+  "version": "1.2.0",
+  "state": "active",
+  "updatedAt": "2026-02-01T19:30:00.000Z"
+}
+```
+
+---
+
+## GET /skills/by-state (v1.1)
+
+List skills by state.
+
+### Query Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `state` | State to filter by |
+
+### Response
+
+```json
+{
+  "skills": [
+    { "name": "ticket_summarizer", "version": "1.2.0", "state": "active" },
+    { "name": "email_parser", "version": "2.0.0", "state": "active" }
   ]
 }
 ```
@@ -884,7 +1262,7 @@ Query the audit log.
 
 - `agent.start`, `agent.complete`, `agent.error`
 - `tool.call`, `tool.denied`
-- `skill.publish`, `skill.test`
+- `skill.publish`, `skill.test`, `skill_state_changed`, `skill_deprecated_used`
 - `budget.exceeded`, `budget.warning`
 - `permission.denied`
 - `workspace.snapshot`, `workspace.rollback`
@@ -1032,6 +1410,397 @@ Or if over budget:
 
 ---
 
+## POST /cost/forecast (v1.1)
+
+Estimate cost before execution.
+
+### Request Body
+
+```json
+{
+  "tenant_id": "tenant-123",
+  "model": "gpt-4",
+  "estimated_input_tokens": 5000,
+  "estimated_output_tokens": 1000
+}
+```
+
+### Response
+
+```json
+{
+  "status": "ok",
+  "forecast": {
+    "estimatedCost": 0.21,
+    "budgetRemaining": 57.50,
+    "wouldExceedBudget": false,
+    "recommendation": "ok"
+  }
+}
+```
+
+---
+
+## POST /risk/score (v1.1)
+
+Calculate risk score for an execution.
+
+### Request Body
+
+```json
+{
+  "tool_count": 5,
+  "tool_names": ["search", "execute_code"],
+  "skill_state": "draft",
+  "temperature": 1.0,
+  "data_sensitivity": "pii"
+}
+```
+
+### Response
+
+```json
+{
+  "status": "ok",
+  "risk": {
+    "score": 72,
+    "level": "high",
+    "factors": {
+      "toolBreadth": 60,
+      "skillMaturity": 60,
+      "modelVolatility": 50,
+      "dataSensitivity": 100
+    },
+    "riskFactors": [
+      "Skill is in draft state",
+      "High temperature (1.0) increases variability",
+      "PII data is being processed"
+    ],
+    "recommendations": [
+      "Promote skill to tested or active state",
+      "Consider lowering temperature for more consistent output",
+      "Enable PII redaction"
+    ]
+  }
+}
+```
+
+---
+
+# Workspace (v1.1)
+
+## POST /workspace/pin (v1.1)
+
+Pin a workspace version for an environment.
+
+### Request Body
+
+```json
+{
+  "workspace_id": "workspace-123",
+  "environment": "prod",
+  "version_hash": "abc123...",
+  "skill_pins": {
+    "summarizer": "1.2.0"
+  },
+  "model_pin": "gpt-4",
+  "provider_pin": "openai",
+  "pinned_by": "user@example.com"
+}
+```
+
+### Response
+
+```json
+{
+  "status": "ok",
+  "pin": {
+    "workspaceId": "workspace-123",
+    "environment": "prod",
+    "versionHash": "abc123...",
+    "skillPins": { "summarizer": "1.2.0" },
+    "modelPin": "gpt-4",
+    "providerPin": "openai",
+    "pinnedAt": "2026-02-01T19:30:00.000Z"
+  }
+}
+```
+
+---
+
+## GET /workspace/pin (v1.1)
+
+Get pin for a workspace/environment.
+
+### Query Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `workspace_id` | Workspace ID |
+| `environment` | Environment (default: `default`) |
+
+### Response
+
+```json
+{
+  "pin": { ... }
+}
+```
+
+---
+
+## GET /workspace/:id/pins (v1.1)
+
+List all pins for a workspace.
+
+### Response
+
+```json
+{
+  "pins": [
+    { "environment": "dev", "versionHash": "...", ... },
+    { "environment": "staging", "versionHash": "...", ... },
+    { "environment": "prod", "versionHash": "...", ... }
+  ]
+}
+```
+
+---
+
+## DELETE /workspace/pin (v1.1)
+
+Remove a workspace pin.
+
+### Query Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `workspace_id` | Workspace ID |
+| `environment` | Environment |
+
+### Response
+
+```json
+{
+  "status": "ok",
+  "deleted": true
+}
+```
+
+---
+
+## POST /workspace/envs (v1.1)
+
+Create or update a workspace environment.
+
+### Request Body
+
+```json
+{
+  "workspace_id": "workspace-123",
+  "environment": "staging",
+  "description": "Staging environment",
+  "version_hash": "abc123...",
+  "is_default": false,
+  "locked": false
+}
+```
+
+### Response
+
+```json
+{
+  "status": "ok",
+  "environment": { ... }
+}
+```
+
+---
+
+## GET /workspace/envs (v1.1)
+
+List environments for a workspace.
+
+### Query Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `workspace_id` | Workspace ID |
+
+### Response
+
+```json
+{
+  "environments": [
+    { "environment": "dev", "isDefault": true, "locked": false, ... },
+    { "environment": "staging", "isDefault": false, "locked": false, ... },
+    { "environment": "prod", "isDefault": false, "locked": true, ... }
+  ]
+}
+```
+
+---
+
+## POST /workspace/envs/promote (v1.1)
+
+Promote from one environment to another.
+
+### Request Body
+
+```json
+{
+  "workspace_id": "workspace-123",
+  "source_env": "staging",
+  "target_env": "prod"
+}
+```
+
+### Response
+
+```json
+{
+  "status": "ok",
+  "result": {
+    "success": true,
+    "sourceEnv": "staging",
+    "targetEnv": "prod",
+    "versionHash": "abc123..."
+  }
+}
+```
+
+---
+
+## POST /workspace/envs/init (v1.1)
+
+Initialize standard environments (dev, staging, prod).
+
+### Request Body
+
+```json
+{
+  "workspace_id": "workspace-123",
+  "default_env": "dev"
+}
+```
+
+### Response
+
+```json
+{
+  "status": "ok",
+  "environments": [
+    { "environment": "dev", "isDefault": true, "locked": false },
+    { "environment": "staging", "isDefault": false, "locked": false },
+    { "environment": "prod", "isDefault": false, "locked": true }
+  ]
+}
+```
+
+---
+
+## POST /workspace/impact (v1.1)
+
+Analyze impact of workspace changes.
+
+### Request Body
+
+```json
+{
+  "workspace_path": "/path/to/workspace",
+  "old_hash": "abc123...",
+  "new_hash": "def456..."
+}
+```
+
+### Response
+
+```json
+{
+  "status": "ok",
+  "analysis": {
+    "summary": {
+      "totalFilesChanged": 5,
+      "skillsAffected": 2,
+      "permissionsChanged": 1,
+      "estimatedCostImpact": "increase"
+    },
+    "fileChanges": {
+      "added": ["skills/new-skill.md"],
+      "modified": ["SOUL.md"],
+      "deleted": []
+    },
+    "affectedSkills": [
+      { "name": "summarizer", "changeType": "modified" }
+    ],
+    "recommendations": [
+      "Run skill tests before deployment",
+      "Review permission changes"
+    ],
+    "risk": {
+      "level": "medium",
+      "factors": ["Permission changes (1)"]
+    }
+  }
+}
+```
+
+---
+
+# Control Plane (v1.1)
+
+## GET /api/version (v1.1)
+
+Get Wombat version and capabilities.
+
+### Response
+
+```json
+{
+  "version": "1.1.0",
+  "contractVersion": "1.1.0",
+  "features": [
+    "trace_diff",
+    "trace_annotations",
+    "trace_retention",
+    "skill_lifecycle",
+    "workspace_pinning",
+    "workspace_environments",
+    "cost_forecasting",
+    "risk_scoring",
+    "control_plane_versioning",
+    "trace_linking",
+    "impact_analysis"
+  ]
+}
+```
+
+---
+
+## GET /api/compatibility (v1.1)
+
+Check compatibility with control plane.
+
+### Query Parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| `control_plane_url` | URL of control plane to check |
+
+### Response
+
+```json
+{
+  "compatible": true,
+  "wombatContractVersion": "1.1.0",
+  "controlPlaneContractVersion": "1.1.0",
+  "warnings": [],
+  "missingFeatures": []
+}
+```
+
+---
+
 # Evaluations
 
 ## POST /evals/run
@@ -1154,10 +1923,14 @@ Get database statistics.
   "size_bytes": 1048576,
   "tables": {
     "traces": 1250,
+    "trace_annotations": 500,
     "audit_log": 15000,
     "skill_registry": 25,
     "tenant_budgets": 10,
+    "tenant_retention_policies": 5,
     "workspace_versions": 50,
+    "workspace_pins": 15,
+    "workspace_environments": 30,
     "eval_results": 100
   }
 }

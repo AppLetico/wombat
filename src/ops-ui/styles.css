@@ -1,0 +1,222 @@
+body {
+  margin: 0;
+  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background: #0f1115;
+  color: #e5e7eb;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  background: #111827;
+  border-bottom: 1px solid #1f2937;
+}
+
+.brand {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.auth {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.auth input {
+  width: 280px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #374151;
+  background: #111827;
+  color: #e5e7eb;
+}
+
+.auth button {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #fff;
+  cursor: pointer;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 16px;
+  padding: 16px 24px;
+}
+
+.panel {
+  background: #111827;
+  border: 1px solid #1f2937;
+  border-radius: 8px;
+  padding: 16px;
+  min-height: 60vh;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.filters input,
+.filters select,
+.filters button {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #374151;
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+.filters button {
+  background: #2563eb;
+  cursor: pointer;
+}
+
+.table {
+  display: grid;
+  gap: 4px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 2.2fr 0.6fr 0.8fr 0.7fr 0.7fr 0.8fr 0.8fr;
+  gap: 8px;
+  padding: 8px;
+  background: #0f172a;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.row.header {
+  background: transparent;
+  font-weight: 600;
+  cursor: default;
+}
+
+.cell {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell.id {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.detail-body {
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.diff-form {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.diff-form input,
+.diff-form button {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #374151;
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+.diff-form button {
+  background: #2563eb;
+  cursor: pointer;
+}
+
+.detail-block {
+  padding: 12px;
+  background: #0f172a;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.detail-block.muted {
+  color: #9ca3af;
+}
+
+.checklist {
+  margin: 8px 0 0;
+  padding-left: 16px;
+  color: #e5e7eb;
+  font-size: 12px;
+}
+
+.steps {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.step {
+  padding: 6px 8px;
+  background: #111827;
+  border-radius: 6px;
+}
+
+.diff-summary {
+  white-space: pre-wrap;
+  font-size: 12px;
+  margin-top: 8px;
+}
+
+.empty {
+  padding: 16px;
+  color: #9ca3af;
+}
+
+.promotion-panel {
+  margin-top: 16px;
+}
+
+.promotion-panel > button {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #374151;
+  background: #2563eb;
+  color: #e5e7eb;
+  cursor: pointer;
+  margin-bottom: 8px;
+}
+
+.promotion-form {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+  gap: 8px;
+  margin: 8px 0 12px;
+}
+
+.promotion-form input,
+.promotion-form button {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #374151;
+  background: #0f172a;
+  color: #e5e7eb;
+}
+
+.promotion-form button {
+  background: #2563eb;
+  cursor: pointer;
+}
+
+.checkbox {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}

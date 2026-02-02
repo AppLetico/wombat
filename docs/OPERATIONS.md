@@ -14,17 +14,35 @@ Every agent execution produces a detailed trace for debugging and analysis.
 interface AgentTrace {
   id: string;                    // UUID v7 (time-ordered)
   tenantId: string;
-  agentId: string;
-  workspaceHash: string;         // SHA256 of workspace at execution time
-  skillVersions: Record<string, string>;  // Skills used with versions
-  status: 'success' | 'error' | 'timeout';
-  startTime: Date;
-  endTime: Date;
-  durationMs: number;
-  steps: TraceStep[];            // Detailed execution steps
-  usage: TokenUsage;
-  cost: CostBreakdown;
-  metadata?: Record<string, any>;
+  workspaceId: string;
+  agentRole?: string;
+  startedAt: string;
+  completedAt?: string;
+  durationMs?: number;
+  workspaceHash?: string;        // SHA256 of workspace at execution time
+  skillVersions: Record<string, string>;
+  model: string;
+  provider: string;
+  input: {
+    message: string;
+    messageHistory: number;
+  };
+  steps: TraceStep[];
+  output?: {
+    message: string;
+    toolCalls: ToolCallTrace[];
+  };
+  usage: {
+    inputTokens: number;
+    outputTokens: number;
+    totalCost: number;
+  };
+  redactedPrompt?: string;
+  error?: string;
+  labels?: Record<string, string>;
+  taskId?: string;
+  documentId?: string;
+  messageId?: string;
 }
 ```
 
@@ -37,38 +55,54 @@ type TraceStep = LLMCallStep | ToolCallStep | ToolResultStep | ErrorStep;
 
 interface LLMCallStep {
   type: 'llm_call';
-  timestamp: Date;
-  model: string;
-  promptTokens: number;
-  completionTokens: number;
+  timestamp: string;
   durationMs: number;
-  // Prompt content is redacted before storage
+  data: {
+    model: string;
+    provider: string;
+    inputTokens: number;
+    outputTokens: number;
+    cost: number;
+    hasToolCalls: boolean;
+    finishReason?: string;
+  };
 }
 
 interface ToolCallStep {
   type: 'tool_call';
-  timestamp: Date;
-  toolName: string;
-  toolCallId: string;
-  input: unknown;  // Redacted
+  timestamp: string;
   durationMs: number;
+  data: {
+    toolCallId: string;
+    toolName: string;
+    arguments: unknown;  // Redacted
+    permitted: boolean;
+    permissionReason?: string;
+  };
 }
 
 interface ToolResultStep {
   type: 'tool_result';
-  timestamp: Date;
-  toolCallId: string;
-  success: boolean;
-  result: unknown;  // Redacted
-  error?: string;
+  timestamp: string;
+  durationMs: number;
+  data: {
+    toolCallId: string;
+    toolName: string;
+    success: boolean;
+    result?: unknown;  // Redacted
+    error?: string;
+  };
 }
 
 interface ErrorStep {
   type: 'error';
-  timestamp: Date;
-  error: string;
-  code?: string;
-  recoverable: boolean;
+  timestamp: string;
+  durationMs: number;
+  data: {
+    code: string;
+    message: string;
+    recoverable: boolean;
+  };
 }
 ```
 
@@ -89,27 +123,39 @@ Use the `TraceBuilder` for constructing traces:
 import { TraceBuilder } from './lib/tracing/trace.js';
 
 const trace = new TraceBuilder({
-  tenantId: 'tenant-123',
-  agentId: 'jarvis',
-  workspaceHash: 'abc123...'
+  tenantId: "tenant-123",
+  workspaceId: "workspace-123",
+  model: "gpt-4o-mini",
+  provider: "openai",
+  agentRole: "jarvis",
+  inputMessage: "Find the fastest route"
 });
 
 trace.addLLMCall({
-  model: 'gpt-4o-mini',
-  promptTokens: 1200,
-  completionTokens: 300,
-  durationMs: 2000
-});
+  model: "gpt-4o-mini",
+  provider: "openai",
+  inputTokens: 1200,
+  outputTokens: 300,
+  cost: 0.00025,
+  hasToolCalls: true
+}, 2000);
 
 trace.addToolCall({
-  toolName: 'search',
-  toolCallId: 'call-1',
-  input: { query: 'test' },
-  durationMs: 500
-});
+  toolCallId: "call-1",
+  toolName: "search",
+  arguments: { query: "test" },
+  permitted: true
+}, 50);
 
-trace.complete('success');
-const finalTrace = trace.build();
+trace.addToolResult({
+  toolCallId: "call-1",
+  toolName: "search",
+  success: true,
+  result: { hits: 3 }
+}, 450);
+
+trace.setOutput("Here is the result", []);
+const finalTrace = trace.complete();
 ```
 
 ### Querying Traces
@@ -127,6 +173,14 @@ GET /traces?status=error
 # Get full trace
 GET /traces/0194c8f0-7e1a-7000-8000-000000000001
 ```
+
+---
+
+## Operations Console (v1.2)
+
+The human-facing Operations Console is served at `/ops` and provides trace explorer, diff, promotion, rollback, skill ops, and cost/risk dashboards.
+
+Ops API endpoints are under `/ops/api/*` and require `Authorization: Bearer <OIDC JWT>`.
 
 ---
 

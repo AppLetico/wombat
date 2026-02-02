@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wombat Ops Console</title>
+    <link rel="stylesheet" href="/ops/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="brand">Wombat Ops</div>
+      <div class="auth">
+        <input id="tokenInput" type="password" placeholder="Paste OIDC access token" />
+        <button id="saveToken">Save Token</button>
+        <span id="authStatus">Not authenticated</span>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="panel">
+        <h2>Trace Explorer</h2>
+        <div class="filters">
+          <input id="tenantFilter" placeholder="Tenant ID" />
+          <input id="workspaceFilter" placeholder="Workspace ID" />
+          <input id="agentFilter" placeholder="Agent role" />
+          <select id="statusFilter">
+            <option value="">Status</option>
+            <option value="success">Success</option>
+            <option value="error">Error</option>
+          </select>
+          <select id="riskFilter">
+            <option value="">Risk level</option>
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+            <option value="critical">Critical</option>
+          </select>
+          <button id="refreshTraces">Refresh</button>
+        </div>
+        <div id="traceTable" class="table"></div>
+        <div class="promotion-panel">
+          <h3>Promotion Checks</h3>
+          <div class="promotion-form">
+            <input id="promoWorkspace" placeholder="Workspace ID" />
+            <input id="promoSource" placeholder="Source env (dev)" />
+            <input id="promoTarget" placeholder="Target env (staging/prod)" />
+            <button id="runPromotionCheck">Run Checks</button>
+          </div>
+          <div class="promotion-form">
+            <input id="promoAnnotation" placeholder="Annotation (required for execute)" />
+            <label class="checkbox">
+              <input id="promoOverride" type="checkbox" />
+              Override blocks
+            </label>
+            <button id="runPromotionExecute">Execute Promotion</button>
+          </div>
+          <div id="promotionResult" class="detail-block muted">Run checks before promotion.</div>
+        </div>
+        <div class="promotion-panel">
+          <h3>Rollback</h3>
+          <div class="promotion-form">
+            <input id="rollbackWorkspace" placeholder="Workspace ID" />
+            <button id="loadVersions">Load Versions</button>
+          </div>
+          <div id="versionList" class="detail-block muted">No versions loaded.</div>
+          <div class="promotion-form">
+            <input id="rollbackVersion" placeholder="Version hash" />
+            <input id="rollbackAnnotation" placeholder="Annotation (required)" />
+            <button id="runRollback">Execute Rollback</button>
+          </div>
+        </div>
+        <div class="promotion-panel">
+          <h3>Skill Registry</h3>
+          <div class="promotion-form">
+            <input id="skillSearch" placeholder="Search skills" />
+            <button id="loadSkills">Load Skills</button>
+          </div>
+          <div id="skillList" class="detail-block muted">No skills loaded.</div>
+          <div class="promotion-form">
+            <input id="skillName" placeholder="Skill name" />
+            <input id="skillVersion" placeholder="Version" />
+            <input id="skillState" placeholder="Target state (active)" />
+            <button id="promoteSkill">Promote Skill</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel detail">
+        <h2>Trace Detail</h2>
+        <div class="diff-form">
+          <input id="diffBase" placeholder="Base trace ID" />
+          <input id="diffCompare" placeholder="Compare trace ID" />
+          <button id="runDiff">Run Diff</button>
+        </div>
+        <div id="diffResult" class="detail-block muted">Run a diff to compare two traces.</div>
+        <div id="traceDetail" class="detail-body">Select a trace to inspect.</div>
+        <div class="promotion-panel">
+          <h3>Cost Dashboard</h3>
+          <button id="loadCostDashboard">Load Cost</button>
+          <div id="costDashboard" class="detail-block muted">No cost data.</div>
+        </div>
+        <div class="promotion-panel">
+          <h3>Risk Dashboard</h3>
+          <button id="loadRiskDashboard">Load Risk</button>
+          <div id="riskDashboard" class="detail-block muted">No risk data.</div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/ops/app.js"></script>
+  </body>
+</html>

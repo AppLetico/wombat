@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { beforeAll, describe, it, expect } from 'vitest';
 import {
   ToolProxy,
   parseToolCalls,
@@ -8,6 +8,9 @@ import {
 } from './toolProxy.js';
 
 describe('ToolProxy', () => {
+  beforeAll(() => {
+    process.env.WOMBAT_TEST_MODE = 'true';
+  });
   describe('getOpenAIFormat', () => {
     it('should convert tool definitions to OpenAI format', () => {
       const proxy = new ToolProxy({ backendUrl: 'http://localhost:3000' });

@@ -250,14 +250,14 @@ The codebase is organized into logical modules:
 src/lib/
 ├── core/           # Database, config
 ├── auth/           # Authentication, tenant context
-├── tracing/        # Trace model, trace store
-├── skills/         # Skill manifest, registry, testing
+├── tracing/        # Trace model, trace store, diff, annotations, retention
+├── skills/         # Skill manifest, registry, testing, lifecycle
 ├── tools/          # Tool proxy, permissions
-├── governance/     # Audit logs, redaction, budgets
+├── governance/     # Audit logs, redaction, budgets, risk scoring
 ├── providers/      # LLM providers, contracts
-├── workspace/      # Workspace management, versioning
+├── workspace/      # Workspace management, versioning, pins, environments, impact analysis
 ├── evals/          # Evaluation framework
-└── integrations/   # Mission Control, webhooks, costs
+└── integrations/   # Mission Control, webhooks, costs, control plane versioning
 ```
 
 ### Daemon API (`src/server/index.ts`)
@@ -279,6 +279,11 @@ src/lib/
 | `GET /traces` | List traces with filtering |
 | `GET /traces/:id` | Get full trace details |
 | `GET /traces/:id/replay` | Get replay context |
+| `POST /traces/diff` | Compare two traces (v1.1) |
+| `POST /traces/:id/label` | Add labels to a trace (v1.1) |
+| `POST /traces/:id/annotate` | Add annotations (v1.1) |
+| `GET /traces/by-label` | Find traces by label (v1.1) |
+| `GET /traces/by-entity` | Find traces by entity (v1.1) |
 
 **Skill Registry Endpoints:**
 
@@ -287,6 +292,9 @@ src/lib/
 | `POST /skills/publish` | Publish skill to registry |
 | `GET /skills/registry/:name` | Get skill from registry |
 | `POST /skills/registry/:name/test` | Run skill tests |
+| `POST /skills/:name/:version/promote` | Promote skill state (v1.1) |
+| `GET /skills/:name/:version/state` | Get skill state (v1.1) |
+| `GET /skills/by-state` | List skills by state (v1.1) |
 
 **Governance Endpoints:**
 
@@ -295,6 +303,37 @@ src/lib/
 | `GET /audit` | Query audit logs |
 | `GET /budget` | Get tenant budget |
 | `POST /budget/check` | Check budget availability |
+| `POST /cost/forecast` | Pre-execution cost estimate (v1.1) |
+| `POST /risk/score` | Calculate execution risk (v1.1) |
+
+**Retention Endpoints (v1.1):**
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /retention/policy` | Set retention policy |
+| `GET /retention/policy` | Get retention policy |
+| `POST /retention/enforce` | Enforce retention (delete old traces) |
+| `GET /retention/stats` | Retention statistics |
+
+**Workspace Endpoints (v1.1):**
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /workspace/pin` | Pin workspace version |
+| `GET /workspace/pin` | Get workspace pin |
+| `GET /workspace/:id/pins` | List all pins for workspace |
+| `POST /workspace/envs` | Create/update environment |
+| `GET /workspace/envs` | List environments |
+| `POST /workspace/envs/promote` | Promote between environments |
+| `POST /workspace/envs/init` | Initialize standard environments |
+| `POST /workspace/impact` | Analyze change impact |
+
+**Control Plane Endpoints (v1.1):**
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /api/version` | Wombat version and features |
+| `GET /api/compatibility` | Check control plane compatibility |
 
 **Evaluation Endpoints:**
 
@@ -305,24 +344,35 @@ src/lib/
 
 ### Database (`src/lib/core/db.ts`)
 - SQLite with WAL mode for concurrency
-- Tables: traces, audit_log, skill_registry, tenant_budgets, workspace_versions, eval_results
-- Auto-initialization on startup
+- Tables: traces, trace_annotations, audit_log, skill_registry, tenant_budgets, tenant_retention_policies, workspace_versions, workspace_pins, workspace_environments, eval_results
+- Auto-initialization and migrations on startup
 
 ### Tracing (`src/lib/tracing/`)
 - `trace.ts` - Trace model and TraceBuilder
-- `traceStore.ts` - SQLite-backed trace storage
-- Every request gets a UUID v7 trace ID
+- `traceStore.ts` - SQLite-backed trace storage with label/entity filtering
+- `traceDiff.ts` - Compare two traces for debugging regressions
+- `traceAnnotations.ts` - Append-only trace annotations (baseline, incident, etc.)
+- `retentionPolicies.ts` - Per-tenant trace retention with configurable strategies
+- Every request gets a UUID v7 trace ID with optional entity linking (task, document, message)
 
 ### Skill System (`src/lib/skills/`)
 - `skillManifest.ts` - YAML manifest parsing with Zod validation
-- `skillRegistry.ts` - Versioned skill storage
+- `skillRegistry.ts` - Versioned skill storage with lifecycle states
 - `skillTester.ts` - Test runner for skill manifests
 - `skills.ts` - Workspace skill loader (legacy markdown support)
+
+**Skill Lifecycle States (v1.1):**
+- `draft` - Initial state, not executable
+- `tested` - Tests have passed
+- `approved` - Manually approved
+- `active` - Executable in production
+- `deprecated` - Still executable but emits warnings
 
 ### Governance (`src/lib/governance/`)
 - `auditLog.ts` - Immutable append-only audit log
 - `redaction.ts` - PII detection and redaction
-- `budgetManager.ts` - Per-tenant budget controls
+- `budgetManager.ts` - Per-tenant budget controls with cost forecasting
+- `riskScoring.ts` - Calculate risk scores based on tool breadth, skill maturity, temperature, and data sensitivity
 
 ### Tool System (`src/lib/tools/`)
 - `toolProxy.ts` - Hybrid tool calling (Wombat defines, backend executes)
@@ -331,6 +381,9 @@ src/lib/
 ### Workspace (`src/lib/workspace/`)
 - `workspace.ts` - Workspace loader for prompts
 - `workspaceVersioning.ts` - Content-addressable versioning
+- `workspacePins.ts` - Pin workspace/skill/model versions per environment
+- `workspaceEnvironments.ts` - Dev/staging/prod environments with promotion flows
+- `impactAnalysis.ts` - Analyze impact of workspace changes before applying
 
 ### Providers (`src/lib/providers/`)
 - `llmProvider.ts` - Multi-provider abstraction via pi-ai
@@ -341,6 +394,7 @@ src/lib/
 - `missionControl.ts` - Backend API client
 - `webhooks.ts` - Completion callbacks
 - `costs.ts` - Usage tracking
+- `controlPlaneVersion.ts` - Validate compatibility between Wombat and control plane
 
 ### Scripts (`src/scripts/`)
 - `notification_dispatcher.ts` - Polls and forwards notifications
