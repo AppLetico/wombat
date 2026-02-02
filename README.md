@@ -35,6 +35,9 @@
 
 Inspired by [OpenClaw](https://openclaw.ai/)'s workspace pattern, Wombat Ops brings operational guarantees, governance, and observability to AI agents in production.
 
+> *"AI agents are not demos. They are production systems."*  
+> Read the [Wombat Ops Manifesto](docs/MANIFESTO.md)
+
 ---
 
 ## What Wombat Ops Does
@@ -219,6 +222,7 @@ src/lib/
 
 ## Documentation
 
+- [docs/MANIFESTO.md](docs/MANIFESTO.md) - Our philosophy and principles
 - [docs/QUICKSTART.md](docs/QUICKSTART.md) - Getting started
 - [docs/API.md](docs/API.md) - Full API reference
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - System architecture
