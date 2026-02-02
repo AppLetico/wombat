@@ -15,6 +15,7 @@
     "heartbeat": "tsx src/scripts/heartbeat.ts",
     "standup": "tsx src/scripts/daily_standup.ts",
     "conformance": "tsx scripts/conformance.ts",
+    "init-workspace": "tsx scripts/init-workspace.ts",
     "cli": "tsx src/cli.ts",
     "lint": "echo \"no lint\""
   },

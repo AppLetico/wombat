@@ -4,6 +4,11 @@ node_modules/
 # Build
 dist/
 
+# Scaffolded workspace (create with: npm run init-workspace)
+workspace/
+# Keep the built-in template (templates/workspace/) in the repo
+!templates/workspace/
+
 # Environment
 .env
 .env.local

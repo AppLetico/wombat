@@ -40,6 +40,17 @@ Inspired by [OpenClaw](https://openclaw.ai/)'s workspace pattern, Wombat brings 
 
 ## Quickstart
 
+**Fastest start (one command):**
+
+```bash
+make setup
+# Then edit .env (BACKEND_URL, AGENT_JWT_SECRET, LLM API keys) and run: make dev
+```
+
+`make setup` installs dependencies, copies `.env.example` → `.env` if missing, and scaffolds a workspace from the built-in template.
+
+---
+
 ### 1) Install
 
 ```bash
@@ -48,6 +59,18 @@ cp .env.example .env
 ```
 
 ### 2) Create a workspace
+
+Scaffold a workspace from the built-in template (creates `./workspace` with AGENTS.md, SOUL.md, etc.):
+
+```bash
+npm run init-workspace
+# or: make workspace
+# or: npx wombat init
+```
+
+To use a custom path: `WOMBAT_WORKSPACE=./my-workspace npm run init-workspace`. Add `-- --force` to overwrite existing files.
+
+Manual layout (same as the template):
 
 ```text
 workspace/
@@ -203,10 +226,13 @@ See the full comparison in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#wombat-vs
 ```bash
 npm run build
 npm link
+wombat init [dir]   # Create workspace from template (default: ./workspace, -f to overwrite)
 wombat serve        # Start the daemon server
 wombat dispatcher   # Run notification dispatcher
-wombat heartbeat    # Run heartbeat check
+wombat heartbeat   # Run heartbeat check
 ```
+
+A **Makefile** is provided for common tasks: `make setup` (first-time: install + env + workspace), `make install`, `make dev`, `make workspace`, `make test`, `make conformance`.
 
 ## OpenClaw skill compatibility
 
