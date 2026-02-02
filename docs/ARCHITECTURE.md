@@ -18,12 +18,13 @@ It integrates with your backend via the **Control Plane Contract** while providi
 Wombat follows an [OpenClaw](https://openclaw.ai/)-inspired architecture with enterprise-grade operations:
 
 1. **Workspace-based configuration** - Agent personas and rules live in markdown files, not code
-2. **Backend-agnostic** - Works with any Mission Control-compatible backend
+2. **Backend-agnostic** - Works with any Control Plane Contract-compatible backend
 3. **Multi-agent support** - Role-specific personas via `souls/<role>.md` files
 4. **Flexible task handling** - Backend can own task creation or delegate to wombat
 5. **Observable by default** - Every execution produces a queryable trace
-6. **Governance first** - Tenant isolation, permissions, and audit trails built-in
-7. **Skill versioning** - Immutable skill registry with testing and rollback
+6. **Governance first** - Tenant isolation, RBAC, budgets, and audit trails built-in
+7. **Skill versioning** - Immutable skill registry with lifecycle states and testing
+8. **Ops as a first-class concern** - Console, dashboards, and workflows for operators
 
 ## Wombat vs OpenClaw
 
@@ -47,7 +48,7 @@ As one user put it: "A smart model with eyes and hands at a desk with keyboard a
 Wombat is a **backend agent runtime** for multi-tenant product applications. It's designed for:
 
 - **Multi-user SaaS products** with data isolation per user
-- **API-driven coordination** with a Mission Control backend
+- **API-driven coordination** with a Control Plane-compatible backend
 - **Domain-specific workflows** (not general-purpose)
 - **Portable deployment** across different projects
 - **Auditable operations** with activity trails and guardrails
@@ -66,7 +67,7 @@ Wombat is stateless - it doesn't run on a user's machine or have direct tool acc
 | **Browser control** | Yes - can browse, fill forms, extract data | No - backend handles web access |
 | **Self-modification** | Can write its own skills | No - workspace files are static |
 | **Configuration** | Workspace on host machine | Workspace files (external to wombat) |
-| **Integrations** | 50+ (Gmail, GitHub, Spotify, etc.) | Mission Control API only |
+| **Integrations** | 50+ (Gmail, GitHub, Spotify, etc.) | Control Plane API only |
 | **Use case** | Personal assistant for any task | Product agents for specific workflows |
 
 ### What Wombat Borrows from OpenClaw
@@ -111,7 +112,7 @@ postMessage(userId, taskId, content)
 
 **3. Stateless daemon**
 
-OpenClaw maintains persistent memory on the host and remembers context 24/7. Wombat is stateless - all state lives in the backend's Mission Control:
+OpenClaw maintains persistent memory on the host and remembers context 24/7. Wombat is stateless - all state lives in the backend via the Control Plane:
 - Tasks, messages, documents in database
 - Notifications and subscriptions
 - Audit trail of all actions
@@ -226,6 +227,8 @@ OpenClaw optimizes for broad personal capability across 50+ integrations. Wombat
 | | Health checks | ✅ | ✅ |
 | **Cost** | Per-request cost | ✅ | ✅ |
 | | Aggregate usage | ✅ | ✅ |
+| | Budget controls | ❌ | ✅ (hard/soft limits) |
+| | Cost forecasting | ❌ | ✅ |
 | **Streaming** | SSE streaming | ✅ | ✅ |
 | | Webhooks | Varies | ✅ |
 | **LLM** | Structured JSON (/llm-task) | ✅ (Lobster) | ✅ |
@@ -237,8 +240,24 @@ OpenClaw optimizes for broad personal capability across 50+ integrations. Wombat
 | | User model | Single user | Multi-tenant |
 | | State storage | Local filesystem | Backend DB |
 | | Self-modifying | ✅ | ❌ (stateless) |
-| **Operations** | Multi-tenant isolation | ❌ | ✅ |
-| | Auditable operations | Optional | ✅ (built-in) |
+| **Governance** | RBAC (role-based access) | ❌ | ✅ |
+| | Multi-tenant isolation | ❌ | ✅ |
+| | Risk scoring | ❌ | ✅ |
+| | PII redaction | ❌ | ✅ |
+| | Immutable audit logs | Optional | ✅ (built-in) |
+| **Tracing** | Execution traces | Log files | ✅ (structured) |
+| | Trace replay | ❌ | ✅ |
+| | Trace diff | ❌ | ✅ |
+| | Trace annotations | ❌ | ✅ |
+| | Retention policies | ❌ | ✅ |
+| **Skills** | Skill versioning | ❌ | ✅ (immutable) |
+| | Skill lifecycle states | ❌ | ✅ |
+| | Skill testing harness | ❌ | ✅ |
+| **Environments** | Workspace versioning | ❌ | ✅ |
+| | Environment pinning | ❌ | ✅ |
+| | Promotion flows | ❌ | ✅ |
+| | Impact analysis | ❌ | ✅ |
+| **Operations** | Ops Console (UI) | ❌ | ✅ (OIDC + RBAC) |
 | | Portable across projects | Tied to host | ✅ |
 | | 50+ integrations | ✅ | ❌ (backend handles) |
 
@@ -343,6 +362,56 @@ src/lib/
 |----------|-------------|
 | `POST /evals/run` | Run evaluation dataset |
 | `GET /evals/:id` | Get evaluation result |
+
+**Ops Console Endpoints (v1.2):**
+
+| Endpoint | Description |
+|----------|-------------|
+| `GET /ops` | Operations Console UI |
+| `GET /ops/api/me` | Current user and RBAC context |
+| `GET /ops/api/traces` | Trace list (view-model) |
+| `GET /ops/api/traces/:id` | Trace detail (view-model) |
+| `POST /ops/api/traces/diff` | Trace diff with highlights |
+| `POST /ops/api/workspaces/:id/promotions/check` | Promotion pre-checks |
+| `POST /ops/api/workspaces/:id/promotions/execute` | Execute promotion |
+| `POST /ops/api/workspaces/:id/rollback` | Rollback workspace |
+| `GET /ops/api/skills/registry` | Skill ops view |
+| `POST /ops/api/skills/:name/:version/promote` | Promote skill state |
+| `GET /ops/api/dashboards/cost` | Cost dashboard |
+| `GET /ops/api/dashboards/risk` | Risk dashboard |
+| `GET /ops/api/audit` | Audit log with pagination |
+
+### Ops Console (`/ops`)
+
+The Operations Console (v1.2) provides a web UI for operators, protected by OIDC authentication and RBAC.
+
+**Features:**
+- Trace explorer with filtering, diff, and replay
+- Workspace promotion and rollback workflows
+- Skill lifecycle management
+- Cost and risk dashboards
+- Audit log viewer
+
+**RBAC Roles:**
+- `viewer` - Read-only access to traces and dashboards
+- `operator` - Can add annotations, label incidents
+- `release_manager` - Can promote/rollback workspaces
+- `admin` - Full access including skill lifecycle changes
+
+**Configuration:**
+```bash
+OPS_OIDC_ISSUER=https://your-idp.com/
+OPS_OIDC_AUDIENCE=wombat-ops
+OPS_OIDC_JWKS_URL=https://your-idp.com/.well-known/jwks.json
+OPS_RBAC_CLAIM=roles
+OPS_TENANT_CLAIM=tenant_id
+```
+
+**v1.2.1 Hardening:**
+- Action-level RBAC with resolved permissions at `/ops/api/me`
+- Break-glass overrides require `reason_code` + `justification`, audited as `ops_override_used`
+- Non-admin users never receive raw prompt/tool payloads in trace detail
+- Dashboards include retention/sampling coverage metadata
 
 ### Database (`src/lib/core/db.ts`)
 - SQLite with WAL mode for concurrency
@@ -465,7 +534,7 @@ See [WORKSPACE.md](WORKSPACE.md) for the full specification.
 │  │  │ - Save trace to SQLite                                  ││    │
 │  │  │ - Record to audit log                                   ││    │
 │  │  │ - Update budget spent                                   ││    │
-│  │  │ - Post to Mission Control                               ││    │
+│  │  │ - Post to Control Plane                                 ││    │
 │  │  │ - Return response + trace_id                            ││    │
 │  │  └─────────────────────────────────────────────────────────┘│    │
 │  └─────────────────────────────────────────────────────────────┘    │
@@ -720,10 +789,10 @@ Wombat fires an async POST on completion with event type `agent.completed`.
 
 ## Portability
 
-Wombat is backend-agnostic as long as the target backend exposes Mission Control-compatible endpoints.
+Wombat is backend-agnostic as long as the target backend implements the Control Plane Contract.
 
 **Required configuration:**
-- `BACKEND_URL` - Mission Control backend URL
+- `BACKEND_URL` - Control Plane backend URL
 - `AGENT_JWT_SECRET` - JWT secret for agent authentication
 - `OPENAI_API_KEY` - OpenAI API key
 
@@ -735,7 +804,7 @@ Wombat is backend-agnostic as long as the target backend exposes Mission Control
 1. Clone wombat
 2. Create a workspace folder with your `SOUL.md`, `AGENTS.md`, etc.
 3. Point `WOMBAT_WORKSPACE` at it
-4. Connect to your Mission Control-compatible backend
+4. Connect to your Control Plane Contract-compatible backend
 
 ## Security
 
@@ -759,7 +828,7 @@ Wombat agents are constrained by design:
 | Capability | Allowed | Notes |
 |------------|---------|-------|
 | Read workspace files | ✅ | Bootstrap files only |
-| Call backend APIs | ✅ | Via Mission Control client |
+| Call backend APIs | ✅ | Via Control Plane client |
 | Execute shell commands | ❌ | No host access |
 | Write to filesystem | ❌ | Workspace is read-only |
 | Browse the web | ❌ | Backend handles web access |
