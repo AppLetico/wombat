@@ -19,7 +19,7 @@ export async function buildAgentToken(userId: string, role: string): Promise<str
     type: "agent",
     user_id: userId,
     agent_role: role,
-    sub: `wombat:${role}`
+    sub: `clasper:${role}`
   })
     .setProtectedHeader({ alg: config.agentJwtAlgorithm })
     .setIssuedAt()

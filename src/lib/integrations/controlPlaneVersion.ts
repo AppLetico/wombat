@@ -1,7 +1,7 @@
 /**
  * Control Plane Version Enforcement
  *
- * Validates compatibility between Wombat and the control plane backend.
+ * Validates compatibility between Clasper and the control plane backend.
  * Prevents silent failures due to API contract mismatches.
  */
 
@@ -26,7 +26,7 @@ export interface ControlPlaneCapabilities {
  */
 export interface VersionCheckResult {
   compatible: boolean;
-  wombatContractVersion: string;
+  clasperContractVersion: string;
   controlPlaneContractVersion?: string;
   error?: string;
   warnings: string[];
@@ -51,10 +51,10 @@ export class VersionMismatchError extends Error {
 // ============================================================================
 
 /**
- * Current Wombat control plane contract version
+ * Current Clasper control plane contract version
  * Increment when breaking changes are made to the contract
  */
-export const WOMBAT_CONTRACT_VERSION = '1.1.0';
+export const CLASPER_CONTRACT_VERSION = '1.1.0';
 
 /**
  * Minimum supported control plane contract version
@@ -62,7 +62,7 @@ export const WOMBAT_CONTRACT_VERSION = '1.1.0';
 export const MIN_CONTRACT_VERSION = '1.0.0';
 
 /**
- * Required features for this version of Wombat
+ * Required features for this version of Clasper
  */
 export const REQUIRED_FEATURES = [
   'task_list',
@@ -178,7 +178,7 @@ export async function validateControlPlaneVersion(
   if (!url) {
     return {
       compatible: true,
-      wombatContractVersion: WOMBAT_CONTRACT_VERSION,
+      clasperContractVersion: CLASPER_CONTRACT_VERSION,
       warnings: ['No control plane URL configured - skipping version check'],
       missingFeatures: [],
     };
@@ -189,7 +189,7 @@ export async function validateControlPlaneVersion(
   if (!capabilities) {
     return {
       compatible: false,
-      wombatContractVersion: WOMBAT_CONTRACT_VERSION,
+      clasperContractVersion: CLASPER_CONTRACT_VERSION,
       error: 'Failed to fetch control plane capabilities - control plane may be unreachable',
       warnings: [],
       missingFeatures: [],
@@ -202,7 +202,7 @@ export async function validateControlPlaneVersion(
   if (!isVersionGte(cpVersion, MIN_CONTRACT_VERSION)) {
     return {
       compatible: false,
-      wombatContractVersion: WOMBAT_CONTRACT_VERSION,
+      clasperContractVersion: CLASPER_CONTRACT_VERSION,
       controlPlaneContractVersion: cpVersion,
       error: `Control plane version ${cpVersion} is below minimum required ${MIN_CONTRACT_VERSION}`,
       warnings: [],
@@ -210,12 +210,12 @@ export async function validateControlPlaneVersion(
     };
   }
   
-  if (!areVersionsCompatible(cpVersion, WOMBAT_CONTRACT_VERSION)) {
+  if (!areVersionsCompatible(cpVersion, CLASPER_CONTRACT_VERSION)) {
     return {
       compatible: false,
-      wombatContractVersion: WOMBAT_CONTRACT_VERSION,
+      clasperContractVersion: CLASPER_CONTRACT_VERSION,
       controlPlaneContractVersion: cpVersion,
-      error: `Major version mismatch: Wombat expects ${WOMBAT_CONTRACT_VERSION.split('.')[0]}.x.x, control plane is ${cpVersion}`,
+      error: `Major version mismatch: Clasper expects ${CLASPER_CONTRACT_VERSION.split('.')[0]}.x.x, control plane is ${cpVersion}`,
       warnings: [],
       missingFeatures: [],
     };
@@ -231,7 +231,7 @@ export async function validateControlPlaneVersion(
   if (missingFeatures.length > 0) {
     return {
       compatible: false,
-      wombatContractVersion: WOMBAT_CONTRACT_VERSION,
+      clasperContractVersion: CLASPER_CONTRACT_VERSION,
       controlPlaneContractVersion: cpVersion,
       error: `Control plane missing required features: ${missingFeatures.join(', ')}`,
       warnings: [],
@@ -248,7 +248,7 @@ export async function validateControlPlaneVersion(
   
   return {
     compatible: true,
-    wombatContractVersion: WOMBAT_CONTRACT_VERSION,
+    clasperContractVersion: CLASPER_CONTRACT_VERSION,
     controlPlaneContractVersion: cpVersion,
     warnings,
     missingFeatures: [],

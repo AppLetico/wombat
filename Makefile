@@ -1,4 +1,4 @@
-# Wombat - common targets for dev and CI
+# Clasper - common targets for dev and CI
 # Use: make setup (first time), make dev, make workspace, make test, etc.
 
 .PHONY: install dev build test setup workspace clean conformance dispatcher
@@ -25,13 +25,13 @@ build:
 test:
 	npm test
 
-# Create a workspace from the built-in template (./workspace, or set WOMBAT_WORKSPACE)
+# Create a workspace from the built-in template (./workspace, or set CLASPER_WORKSPACE)
 workspace:
 	npm run init-workspace
 
 # Overwrite existing workspace files
 workspace-force:
-	WOMBAT_WORKSPACE=$${WOMBAT_WORKSPACE:-./workspace} npm run init-workspace -- --force
+	CLASPER_WORKSPACE=$${CLASPER_WORKSPACE:-./workspace} npm run init-workspace -- --force
 
 clean:
 	rm -rf dist node_modules/.cache

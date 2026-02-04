@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Wombat CLI
+ * Clasper CLI
  * 
  * Security: Enforces TLS 1.3 minimum for all HTTPS connections.
  * @see OpenClaw PR: "require TLS 1.3 as minimum"
@@ -54,14 +54,14 @@ function copyWorkspaceTemplate(targetDir: string, force: boolean): { created: st
 
 const program = new Command();
 
-program.name("wombat").description("Wombat agent daemon utilities").version("0.1.0");
+program.name("clasper").description("Clasper agent daemon utilities").version("0.1.0");
 
 program
   .command("init [dir]")
   .description("Create a workspace from the built-in template (default: ./workspace)")
   .option("-f, --force", "Overwrite existing files")
   .action((dir, opts) => {
-    const targetDir = join(process.cwd(), dir || process.env.WOMBAT_WORKSPACE || "workspace");
+    const targetDir = join(process.cwd(), dir || process.env.CLASPER_WORKSPACE || "workspace");
     const force = opts.force === true;
     console.log(`Initializing workspace at: ${targetDir}`);
     if (force) console.log("(--force: overwriting existing files)");

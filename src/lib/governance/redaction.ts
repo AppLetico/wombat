@@ -129,7 +129,7 @@ export class Redactor {
   constructor(config?: Partial<RedactionConfig>) {
     this.patterns = config?.patterns || DEFAULT_PATTERNS;
     this.defaultStrategy = config?.defaultStrategy || 'mask';
-    this.hashSalt = config?.hashSalt || 'wombat-redaction-salt';
+    this.hashSalt = config?.hashSalt || 'clasper-redaction-salt';
   }
 
   /**

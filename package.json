@@ -1,10 +1,10 @@
 {
-  "name": "wombat",
+  "name": "clasper",
   "version": "1.2.1",
   "description": "Agent Operations & Governance Platform for multi-tenant SaaS products.",
   "type": "module",
   "bin": {
-    "wombat": "dist/cli.js"
+    "clasper": "dist/cli.js"
   },
   "scripts": {
     "dev": "tsx src/server/index.ts",

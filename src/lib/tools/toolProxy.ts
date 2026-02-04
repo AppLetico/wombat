@@ -283,7 +283,7 @@ export class ToolProxy {
     }
 
     // Log warnings but don't block (backend is the authoritative validator)
-    if (validation.warnings.length > 0 && process.env.WOMBAT_TEST_MODE !== 'true') {
+    if (validation.warnings.length > 0 && process.env.CLASPER_TEST_MODE !== 'true') {
       console.warn(`Tool '${call.name}' security warnings:`, validation.warnings);
     }
 
@@ -427,7 +427,7 @@ export function parseToolCalls(
         });
       } catch {
         // Invalid JSON in arguments, skip
-        if (process.env.WOMBAT_TEST_MODE !== 'true') {
+        if (process.env.CLASPER_TEST_MODE !== 'true') {
           console.error(`Failed to parse tool call arguments for ${tc.function.name}`);
         }
       }

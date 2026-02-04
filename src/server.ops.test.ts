@@ -26,11 +26,11 @@ let buildApp: () => any;
 
 beforeAll(async () => {
   vi.resetModules();
-  process.env.WOMBAT_TEST_MODE = "true";
+  process.env.CLASPER_TEST_MODE = "true";
   process.env.AGENT_JWT_SECRET = "test-secret";
   process.env.AGENT_DAEMON_API_KEY = "";
   process.env.BACKEND_URL = "http://localhost:8000";
-  process.env.WOMBAT_WORKSPACE = "./test-workspace";
+  process.env.CLASPER_WORKSPACE = "./test-workspace";
   const mod = await import("./server/index.js");
   buildApp = mod.buildApp;
 });

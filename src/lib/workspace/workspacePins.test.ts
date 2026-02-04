@@ -10,7 +10,7 @@ describe('WorkspacePins', () => {
   let pins: WorkspacePins;
 
   beforeEach(() => {
-    process.env.WOMBAT_DB_PATH = ':memory:';
+    process.env.CLASPER_DB_PATH = ':memory:';
     initDatabase();
     pins = getWorkspacePins();
   });
@@ -18,7 +18,7 @@ describe('WorkspacePins', () => {
   afterEach(() => {
     resetWorkspacePins();
     closeDatabase();
-    delete process.env.WOMBAT_DB_PATH;
+    delete process.env.CLASPER_DB_PATH;
   });
 
   describe('pin', () => {

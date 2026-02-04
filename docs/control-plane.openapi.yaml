@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Wombat Control Plane Contract
+  title: Clasper Control Plane Contract
   version: v1
   description: Minimum HTTP contract required for a Mission Control-compatible backend.
 servers:

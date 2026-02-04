@@ -11,7 +11,7 @@ describe('WorkspaceEnvironments', () => {
   let envs: WorkspaceEnvironments;
 
   beforeEach(() => {
-    process.env.WOMBAT_DB_PATH = ':memory:';
+    process.env.CLASPER_DB_PATH = ':memory:';
     initDatabase();
     envs = getWorkspaceEnvironments();
   });
@@ -20,7 +20,7 @@ describe('WorkspaceEnvironments', () => {
     resetWorkspaceEnvironments();
     resetWorkspacePins();
     closeDatabase();
-    delete process.env.WOMBAT_DB_PATH;
+    delete process.env.CLASPER_DB_PATH;
   });
 
   describe('upsertEnvironment', () => {

@@ -33,7 +33,7 @@ multi-agent/
 cp -r docs/examples/multi-agent workspace/
 
 # Or set the path directly
-WOMBAT_WORKSPACE=./docs/examples/multi-agent make dev
+CLASPER_WORKSPACE=./docs/examples/multi-agent make dev
 ```
 
 ## Session Keys
@@ -50,8 +50,8 @@ For production, keep workspace config in your backend repo:
 ```
 your-backend/
 ├── app/                    # Backend code
-├── agent-config/           # Wombat workspace config
-│   ├── workspace/          # ← Set WOMBAT_WORKSPACE to this
+├── agent-config/           # Clasper workspace config
+│   ├── workspace/          # ← Set CLASPER_WORKSPACE to this
 │   │   ├── AGENTS.md
 │   │   ├── souls/
 │   │   └── skills/

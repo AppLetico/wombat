@@ -45,7 +45,7 @@ import { streamAgentReply } from "../lib/providers/streaming.js";
 import { listTasks, createTask, postMessage, postDocument } from "../lib/integrations/missionControl.js";
 import { fireWebhook, buildCompletionPayload, type WebhookConfig } from "../lib/integrations/webhooks.js";
 import { getUsageTracker } from "../lib/integrations/costs.js";
-import { validateControlPlaneVersion, WOMBAT_CONTRACT_VERSION } from "../lib/integrations/controlPlaneVersion.js";
+import { validateControlPlaneVersion, CLASPER_CONTRACT_VERSION } from "../lib/integrations/controlPlaneVersion.js";
 // Workspace
 import { getWorkspaceLoader } from "../lib/workspace/workspace.js";
 import { getWorkspacePins } from "../lib/workspace/workspacePins.js";
@@ -1094,7 +1094,7 @@ export function buildApp() {
   app.get("/api/version", async () => {
     return {
       version: "1.2.1",
-      contract_version: WOMBAT_CONTRACT_VERSION,
+      contract_version: CLASPER_CONTRACT_VERSION,
       name: "Wombat Ops",
       features: [
         "traces",
@@ -1134,7 +1134,7 @@ export function buildApp() {
     if (!result.compatible) {
       return reply.status(503).send({
         compatible: false,
-        wombat_contract_version: result.wombatContractVersion,
+        clasper_contract_version: result.clasperContractVersion,
         control_plane_contract_version: result.controlPlaneContractVersion,
         error: result.error,
         missing_features: result.missingFeatures
@@ -1143,7 +1143,7 @@ export function buildApp() {
 
     return reply.send({
       compatible: true,
-      wombat_contract_version: result.wombatContractVersion,
+      clasper_contract_version: result.clasperContractVersion,
       control_plane_contract_version: result.controlPlaneContractVersion,
       warnings: result.warnings
     });
@@ -3001,7 +3001,7 @@ export function buildApp() {
     // Resolve task_id with flexible options:
     // 1. Use provided task_id directly (backend-owned)
     // 2. Find/create by task_title from request
-    // 3. Find/create by WOMBAT_DEFAULT_TASK env var
+    // 3. Find/create by CLASPER_DEFAULT_TASK env var
     // 4. Error if none of the above
     let taskId: string | null = payload.task_id || null;
 
@@ -3011,7 +3011,7 @@ export function buildApp() {
 
       if (!taskTitle) {
         return reply.status(400).send({
-          error: "Task not specified. Provide task_id, task_title, or set WOMBAT_DEFAULT_TASK env var."
+          error: "Task not specified. Provide task_id, task_title, or set CLASPER_DEFAULT_TASK env var."
         });
       }
 
@@ -3110,7 +3110,7 @@ export function buildApp() {
   return app;
 }
 
-if (process.env.WOMBAT_TEST_MODE !== "true") {
+if (process.env.CLASPER_TEST_MODE !== "true") {
   const app = buildApp();
   app.listen({ port: config.port, host: "0.0.0.0" }).catch((err) => {
     app.log.error(err);

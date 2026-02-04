@@ -10,7 +10,7 @@ import {
   type Skill
 } from "./skills.js";
 
-const TEST_WORKSPACE = "/tmp/wombat-skills-test";
+const TEST_WORKSPACE = "/tmp/clasper-skills-test";
 
 describe("skills", () => {
   beforeEach(() => {

@@ -14,7 +14,7 @@ export interface LLMProviderConfig {
 }
 
 export const config = {
-  port: Number(process.env.WOMBAT_PORT || 8081),
+  port: Number(process.env.CLASPER_PORT || 8081),
   backendUrl: process.env.BACKEND_URL || "http://localhost:8000",
   daemonKey: process.env.AGENT_DAEMON_API_KEY || "",
   agentJwtSecret: process.env.AGENT_JWT_SECRET || "",
@@ -59,25 +59,25 @@ export const config = {
   openaiModelFallback: process.env.OPENAI_MODEL_FALLBACK || "",
 
   // Workspace configuration (OpenClaw-inspired portable agent config)
-  workspacePath: process.env.WOMBAT_WORKSPACE || "./workspace",
+  workspacePath: process.env.CLASPER_WORKSPACE || "./workspace",
   // Default task title for auto-creation (empty = require task_id in request)
-  defaultTaskTitle: process.env.WOMBAT_DEFAULT_TASK || "",
+  defaultTaskTitle: process.env.CLASPER_DEFAULT_TASK || "",
 
   // Retry configuration (OpenClaw-inspired pattern)
-  retryAttempts: parseInt(process.env.WOMBAT_RETRY_ATTEMPTS || "3", 10),
-  retryDelayMs: parseInt(process.env.WOMBAT_RETRY_DELAY_MS || "1000", 10),
-  retryMaxDelayMs: parseInt(process.env.WOMBAT_RETRY_MAX_DELAY_MS || "30000", 10),
-  retryJitter: parseFloat(process.env.WOMBAT_RETRY_JITTER || "0.1"), // 10% jitter
+  retryAttempts: parseInt(process.env.CLASPER_RETRY_ATTEMPTS || "3", 10),
+  retryDelayMs: parseInt(process.env.CLASPER_RETRY_DELAY_MS || "1000", 10),
+  retryMaxDelayMs: parseInt(process.env.CLASPER_RETRY_MAX_DELAY_MS || "30000", 10),
+  retryJitter: parseFloat(process.env.CLASPER_RETRY_JITTER || "0.1"), // 10% jitter
 
   // Context management (OpenClaw-inspired)
   // Warn when context usage exceeds this percentage of the model's context window
-  contextWarningThreshold: parseFloat(process.env.WOMBAT_CONTEXT_WARNING_THRESHOLD || "75"),
+  contextWarningThreshold: parseFloat(process.env.CLASPER_CONTEXT_WARNING_THRESHOLD || "75"),
 
   // Time context (OpenClaw-inspired)
   // Default timezone for time context injection (empty = use system timezone)
-  defaultTimezone: process.env.WOMBAT_DEFAULT_TIMEZONE || "",
+  defaultTimezone: process.env.CLASPER_DEFAULT_TIMEZONE || "",
   // Include time context in system prompt (true by default)
-  includeTimeContext: process.env.WOMBAT_INCLUDE_TIME_CONTEXT !== "false",
+  includeTimeContext: process.env.CLASPER_INCLUDE_TIME_CONTEXT !== "false",
 
   // Deep link templates for trace detail (Ops Console)
   // Use {id} as placeholder for the entity ID

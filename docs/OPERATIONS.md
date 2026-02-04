@@ -1,6 +1,6 @@
 # Operations & Observability
 
-Wombat Ops provides comprehensive operational tooling for running AI agents in production. This document covers tracing, replay, evaluation framework, workspace versioning, and the skill registry.
+Clasper Ops provides comprehensive operational tooling for running AI agents in production. This document covers tracing, replay, evaluation framework, workspace versioning, and the skill registry.
 
 ---
 
@@ -652,7 +652,7 @@ All operational data is stored in SQLite.
 Configure via environment:
 
 ```bash
-WOMBAT_DB_PATH=./wombat.db  # Default
+CLASPER_DB_PATH=./clasper.db  # Default
 ```
 
 ### Database Stats
@@ -665,7 +665,7 @@ Returns:
 
 ```json
 {
-  "path": "./wombat.db",
+  "path": "./clasper.db",
   "size_bytes": 1048576,
   "tables": {
     "traces": 1250,

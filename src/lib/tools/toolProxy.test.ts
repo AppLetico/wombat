@@ -9,7 +9,7 @@ import {
 
 describe('ToolProxy', () => {
   beforeAll(() => {
-    process.env.WOMBAT_TEST_MODE = 'true';
+    process.env.CLASPER_TEST_MODE = 'true';
   });
   describe('getOpenAIFormat', () => {
     it('should convert tool definitions to OpenAI format', () => {

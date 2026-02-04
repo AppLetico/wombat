@@ -98,11 +98,11 @@ Webhook payload on completion:
 }
 ```
 
-If `secret` is provided, the payload is signed with HMAC-SHA256 and included in `X-Wombat-Signature` header.
+If `secret` is provided, the payload is signed with HMAC-SHA256 and included in `X-Clasper-Signature` header.
 
 ### Conversation History
 
-The `messages` array allows backends to inject prior conversation turns. This enables multi-turn conversations without Wombat storing state.
+The `messages` array allows backends to inject prior conversation turns. This enables multi-turn conversations without Clasper storing state.
 
 **Message format:**
 
@@ -142,7 +142,7 @@ Tasks are resolved in priority order:
 
 1. **`task_id`** - Use this specific task directly
 2. **`task_title`** - Find existing task by title, or create new one
-3. **`WOMBAT_DEFAULT_TASK`** - Environment variable fallback
+3. **`CLASPER_DEFAULT_TASK`** - Environment variable fallback
 4. **Error** - Returns 400 if no task can be resolved
 
 ### Response
@@ -526,7 +526,7 @@ Enhanced health check endpoint with component status.
     "status": "unchecked"
   },
   "database": {
-    "path": "./wombat.db",
+    "path": "./clasper.db",
     "status": "ok",
     "tables": {
       "traces": 1250,
@@ -1751,7 +1751,7 @@ Analyze impact of workspace changes.
 
 ## GET /api/version (v1.1)
 
-Get Wombat version and capabilities.
+Get Clasper version and capabilities.
 
 ### Response
 
@@ -1792,7 +1792,7 @@ Check compatibility with control plane.
 ```json
 {
   "compatible": true,
-  "wombatContractVersion": "1.1.0",
+  "clasperContractVersion": "1.1.0",
   "controlPlaneContractVersion": "1.1.0",
   "warnings": [],
   "missingFeatures": []
@@ -1919,7 +1919,7 @@ Get database statistics.
 
 ```json
 {
-  "path": "./wombat.db",
+  "path": "./clasper.db",
   "size_bytes": 1048576,
   "tables": {
     "traces": 1250,

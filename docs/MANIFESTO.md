@@ -1,4 +1,4 @@
-# The Wombat Ops Manifesto
+# The Clasper Ops Manifesto
 
 ## We Believe
 
@@ -40,7 +40,7 @@ In other words:
 
 ## Our Position
 
-Wombat Ops is not trying to make agents powerful.
+Clasper Ops is not trying to make agents powerful.
 
 **We are trying to make agents safe, explainable, and shippable.**
 
@@ -88,7 +88,7 @@ Skills are:
 
 ### 4. Agents Live Inside Products, Not Above Them
 
-Wombat Ops does not replace your backend.
+Clasper Ops does not replace your backend.
 
 It:
 
@@ -121,7 +121,7 @@ Those systems break trust.
 
 ## The Promise
 
-If you build on Wombat Ops:
+If you build on Clasper Ops:
 
 - you will know **what** your agents did
 - you will know **why** they did it

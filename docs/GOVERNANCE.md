@@ -1,6 +1,6 @@
 # Governance & Safety
 
-Wombat Ops provides comprehensive governance features for running AI agents safely in production. This document covers tenant isolation, tool permissions, audit logging, data redaction, and budget controls.
+Clasper Ops provides comprehensive governance features for running AI agents safely in production. This document covers tenant isolation, tool permissions, audit logging, data redaction, and budget controls.
 
 ---
 
@@ -32,7 +32,7 @@ interface TenantContext {
 
 ### JWT Claims
 
-Wombat extracts tenant information from these JWT claims:
+Clasper extracts tenant information from these JWT claims:
 
 | Claim | Description |
 |-------|-------------|
@@ -64,7 +64,7 @@ withinTokenLimit(context: TenantContext, tokenCount: number): boolean
 
 ## Tool Permission System
 
-Wombat implements a two-layer permission system for tool calls.
+Clasper implements a two-layer permission system for tool calls.
 
 ### Layer 1: Skill Permissions
 
@@ -145,7 +145,7 @@ All permission checks are logged:
 
 ## Audit Logging
 
-Wombat maintains an immutable, append-only audit log for compliance and debugging.
+Clasper maintains an immutable, append-only audit log for compliance and debugging.
 
 ### Event Types
 
@@ -241,7 +241,7 @@ Minimum roles:
 
 ## Data Redaction
 
-Wombat can redact sensitive data before it's stored in traces and logs.
+Clasper can redact sensitive data before it's stored in traces and logs.
 
 ### Redaction Strategies
 
@@ -254,7 +254,7 @@ Wombat can redact sensitive data before it's stored in traces and logs.
 
 ### Default Patterns
 
-Wombat includes default patterns for common PII:
+Clasper includes default patterns for common PII:
 
 ```typescript
 const DEFAULT_PATTERNS = [
@@ -318,7 +318,7 @@ const safe = quickRedact(userInput);
 
 ## Budget Controls
 
-Wombat tracks LLM costs per tenant and enforces budget limits.
+Clasper tracks LLM costs per tenant and enforces budget limits.
 
 ### Budget Structure
 
@@ -424,7 +424,7 @@ const approaching = budgetManager.getApproachingLimitTenants(0.8);
 
 ### Agent Constraints
 
-Wombat agents are constrained by design:
+Clasper agents are constrained by design:
 
 | Capability | Allowed |
 |------------|---------|

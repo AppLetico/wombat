@@ -1,6 +1,6 @@
 # Quickstart
 
-This guide covers everything you need to run Wombat end-to-end.
+This guide covers everything you need to run Clasper end-to-end.
 
 ## Prerequisites
 
@@ -9,11 +9,11 @@ This guide covers everything you need to run Wombat end-to-end.
 
 ---
 
-## Step 1: Install Wombat
+## Step 1: Install Clasper
 
 ```bash
 git clone <repo-url>
-cd wombat
+cd clasper
 npm install
 cp .env.example .env
 ```
@@ -22,7 +22,7 @@ cp .env.example .env
 
 ## Step 2: Set Up a Backend
 
-Wombat is **stateless** — it needs a backend to store tasks, messages, and documents. Choose one option:
+Clasper is **stateless** — it needs a backend to store tasks, messages, and documents. Choose one option:
 
 ### Option A: Reference Implementation (for testing)
 
@@ -37,7 +37,7 @@ This starts a backend at `http://localhost:9001` with all required endpoints.
 
 ### Option B: Use an Existing Backend
 
-If you have a Mission Control-compatible backend, configure Wombat to point to it:
+If you have a Mission Control-compatible backend, configure Clasper to point to it:
 
 ```bash
 # In .env
@@ -61,7 +61,7 @@ Your backend must implement these endpoints:
 
 **Requirements:**
 
-1. **Shared secret** — Wombat and your backend must share the same `AGENT_JWT_SECRET`
+1. **Shared secret** — Clasper and your backend must share the same `AGENT_JWT_SECRET`
 2. **Agent token auth** — Accept `X-Agent-Token` header with JWT containing `type`, `user_id`, `agent_role`
 3. **Tenant isolation** — Scope all reads/writes by `user_id` from the token
 4. **Idempotency** — Create endpoints must accept `idempotency_key`
@@ -130,10 +130,10 @@ AGENT_JWT_SECRET=dev-secret-change-me
 OPENAI_API_KEY=sk-...
 
 # Workspace path (default: ./workspace)
-WOMBAT_WORKSPACE=./workspace
+CLASPER_WORKSPACE=./workspace
 
 # Optional: auto-create task with this title
-WOMBAT_DEFAULT_TASK=My Agent Thread
+CLASPER_DEFAULT_TASK=My Agent Thread
 ```
 
 ---
@@ -144,7 +144,7 @@ WOMBAT_DEFAULT_TASK=My Agent Thread
 npm run dev
 ```
 
-Wombat starts at `http://localhost:8081`.
+Clasper starts at `http://localhost:8081`.
 
 **Verify it's running:**
 
@@ -210,7 +210,7 @@ The Operations Console at `/ops` provides trace viewing, replay, and governance 
 
 ```bash
 OPS_OIDC_ISSUER=https://your-idp.com
-OPS_OIDC_AUDIENCE=wombat-ops
+OPS_OIDC_AUDIENCE=clasper-ops
 OPS_OIDC_JWKS_URL=https://your-idp.com/.well-known/jwks.json
 OPS_RBAC_CLAIM=roles
 ```
@@ -223,7 +223,7 @@ See [GOVERNANCE.md](GOVERNANCE.md) for RBAC configuration.
 
 | Document | Description |
 |----------|-------------|
-| [INTEGRATION.md](INTEGRATION.md) | Backend ↔ Wombat integration patterns |
+| [INTEGRATION.md](INTEGRATION.md) | Backend ↔ Clasper integration patterns |
 | [WORKSPACE.md](WORKSPACE.md) | Full workspace specification |
 | [API.md](API.md) | API reference |
 | [CONTROL_PLANE_CONTRACT.md](CONTROL_PLANE_CONTRACT.md) | Backend contract specification |

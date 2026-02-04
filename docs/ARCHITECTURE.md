@@ -2,7 +2,7 @@
 
 ## Overview
 
-Wombat is a **Production Agent Runtime with Governance & Observability** — an API-first, stateless agent execution platform designed for multi-tenant SaaS backends.
+Clasper is a **Production Agent Runtime with Governance & Observability** — an API-first, stateless agent execution platform designed for multi-tenant SaaS backends.
 
 It integrates with your backend via the **Control Plane Contract** while providing:
 - **Full execution traces** with replay, diff, and annotations
@@ -15,20 +15,20 @@ It integrates with your backend via the **Control Plane Contract** while providi
 
 ## Design Principles
 
-Wombat follows an [OpenClaw](https://openclaw.ai/)-inspired architecture with enterprise-grade operations:
+Clasper follows an [OpenClaw](https://openclaw.ai/)-inspired architecture with enterprise-grade operations:
 
 1. **Workspace-based configuration** - Agent personas and rules live in markdown files, not code
 2. **Backend-agnostic** - Works with any Control Plane Contract-compatible backend
 3. **Multi-agent support** - Role-specific personas via `souls/<role>.md` files
-4. **Flexible task handling** - Backend can own task creation or delegate to wombat
+4. **Flexible task handling** - Backend can own task creation or delegate to clasper
 5. **Observable by default** - Every execution produces a queryable trace
 6. **Governance first** - Tenant isolation, RBAC, budgets, and audit trails built-in
 7. **Skill versioning** - Immutable skill registry with lifecycle states and testing
 8. **Ops as a first-class concern** - Console, dashboards, and workflows for operators
 
-## Wombat vs OpenClaw
+## Clasper vs OpenClaw
 
-Wombat borrows workspace-based configuration patterns from [OpenClaw](https://openclaw.ai/), but serves a different purpose. Understanding the differences helps you decide when to use each.
+Clasper borrows workspace-based configuration patterns from [OpenClaw](https://openclaw.ai/), but serves a different purpose. Understanding the differences helps you decide when to use each.
 
 ### What is OpenClaw?
 
@@ -43,9 +43,9 @@ Wombat borrows workspace-based configuration patterns from [OpenClaw](https://op
 
 As one user put it: "A smart model with eyes and hands at a desk with keyboard and mouse. You message it like a coworker and it does everything a person could do with that Mac mini."
 
-### What is Wombat?
+### What is Clasper?
 
-Wombat is a **backend agent runtime** for multi-tenant product applications. It's designed for:
+Clasper is a **backend agent runtime** for multi-tenant product applications. It's designed for:
 
 - **Multi-user SaaS products** with data isolation per user
 - **API-driven coordination** with a Control Plane-compatible backend
@@ -53,11 +53,11 @@ Wombat is a **backend agent runtime** for multi-tenant product applications. It'
 - **Portable deployment** across different projects
 - **Auditable operations** with activity trails and guardrails
 
-Wombat is stateless - it doesn't run on a user's machine or have direct tool access. Instead, it receives HTTP requests, generates LLM responses, and writes results back to a backend database via APIs.
+Clasper is stateless - it doesn't run on a user's machine or have direct tool access. Instead, it receives HTTP requests, generates LLM responses, and writes results back to a backend database via APIs.
 
 ### Key Differences
 
-| Aspect | OpenClaw | Wombat |
+| Aspect | OpenClaw | Clasper |
 |--------|----------|--------|
 | **Deployment** | User's machine (Mac/Windows/Linux) | Backend service (Docker/K8s) |
 | **User model** | Single user (the host owner) | Multi-tenant (many users) |
@@ -66,13 +66,13 @@ Wombat is stateless - it doesn't run on a user's machine or have direct tool acc
 | **Tool execution** | Direct host access (shell, browser, files) | API calls to backend only |
 | **Browser control** | Yes - can browse, fill forms, extract data | No - backend handles web access |
 | **Self-modification** | Can write its own skills | No - workspace files are static |
-| **Configuration** | Workspace on host machine | Workspace files (external to wombat) |
+| **Configuration** | Workspace on host machine | Workspace files (external to clasper) |
 | **Integrations** | 50+ (Gmail, GitHub, Spotify, etc.) | Control Plane API only |
 | **Use case** | Personal assistant for any task | Product agents for specific workflows |
 
-### What Wombat Borrows from OpenClaw
+### What Clasper Borrows from OpenClaw
 
-**Workspace-based configuration** is the primary pattern Wombat adopts:
+**Workspace-based configuration** is the primary pattern Clasper adopts:
 
 ```
 workspace/
@@ -90,20 +90,20 @@ This pattern enables:
 - Easy swapping of configurations
 - Project-specific customization
 
-### What Wombat Does Differently
+### What Clasper Does Differently
 
 **1. Backend-first architecture**
 
-OpenClaw executes tools directly on the host machine - shell commands, browser automation, file access. Wombat only calls backend APIs:
+OpenClaw executes tools directly on the host machine - shell commands, browser automation, file access. Clasper only calls backend APIs:
 
 ```
 OpenClaw:  User (chat app) -> Agent -> Shell/Browser/Files -> Result
-Wombat:    Backend -> HTTP -> Agent -> Backend API -> Database -> Result
+Clasper:    Backend -> HTTP -> Agent -> Backend API -> Database -> Result
 ```
 
 **2. Multi-tenant isolation**
 
-OpenClaw is single-user by design - your data stays on your machine. Wombat is built for multi-user products where every operation is scoped to a `user_id`:
+OpenClaw is single-user by design - your data stays on your machine. Clasper is built for multi-user products where every operation is scoped to a `user_id`:
 
 ```typescript
 // Every API call includes user context
@@ -112,27 +112,27 @@ postMessage(userId, taskId, content)
 
 **3. Stateless daemon**
 
-OpenClaw maintains persistent memory on the host and remembers context 24/7. Wombat is stateless - all state lives in the backend via the Control Plane:
+OpenClaw maintains persistent memory on the host and remembers context 24/7. Clasper is stateless - all state lives in the backend via the Control Plane:
 - Tasks, messages, documents in database
 - Notifications and subscriptions
 - Audit trail of all actions
 
 **4. No direct tool execution**
 
-OpenClaw has "full system access" - it can run shell commands, control browsers, read/write files, and even write its own skills. Wombat has none of this:
+OpenClaw has "full system access" - it can run shell commands, control browsers, read/write files, and even write its own skills. Clasper has none of this:
 - Receives requests via HTTP only
 - Generates LLM responses
 - Writes results to backend APIs
 
-The *backend* (not wombat) owns tool execution, guardrails, and data access.
+The *backend* (not clasper) owns tool execution, guardrails, and data access.
 
 **5. No chat app integration**
 
-OpenClaw connects to WhatsApp, Telegram, Discord, Slack, Signal, and iMessage - users interact via their existing chat apps. Wombat exposes HTTP endpoints - it's meant to be called by a backend, not by users directly.
+OpenClaw connects to WhatsApp, Telegram, Discord, Slack, Signal, and iMessage - users interact via their existing chat apps. Clasper exposes HTTP endpoints - it's meant to be called by a backend, not by users directly.
 
 **6. Product workflow focus**
 
-OpenClaw optimizes for broad personal capability across 50+ integrations. Wombat optimizes for:
+OpenClaw optimizes for broad personal capability across 50+ integrations. Clasper optimizes for:
 - Auditable operations (`mc_activities`)
 - Idempotency keys for safe retries
 - Rate limiting and guardrails
@@ -149,7 +149,7 @@ OpenClaw optimizes for broad personal capability across 50+ integrations. Wombat
 - Single-user or small-team deployment on dedicated hardware
 - General-purpose task automation that evolves over time
 
-**Use Wombat when:**
+**Use Clasper when:**
 - Building a multi-user SaaS product with agents
 - Need strict per-user data isolation
 - Want portable agent configuration across projects
@@ -186,12 +186,12 @@ OpenClaw optimizes for broad personal capability across 50+ integrations. Wombat
 └─────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────┐
-│                         Wombat                               │
+│                         Clasper                               │
 ├─────────────────────────────────────────────────────────────┤
 │  Backend Infrastructure (Docker/K8s)                         │
 │                                                              │
 │  ┌───────────────┐    ┌───────────────┐    ┌──────────────┐│
-│  │    Wombat     │───▶│   Backend     │───▶│   Database   ││
+│  │    Clasper     │───▶│   Backend     │───▶│   Database   ││
 │  │    Daemon     │◀───│   (APIs)      │    │  (per-user)  ││
 │  │  (stateless)  │    │               │    │   isolation  ││
 │  └───────────────┘    └───────────────┘    └──────────────┘│
@@ -203,7 +203,7 @@ OpenClaw optimizes for broad personal capability across 50+ integrations. Wombat
 │         │             └───────────────┘                     │
 │         ▼                                                    │
 │  ┌───────────────┐                                          │
-│  │   Workspace   │  (project-specific, external to wombat)  │
+│  │   Workspace   │  (project-specific, external to clasper)  │
 │  │    Files      │                                          │
 │  └───────────────┘                                          │
 └─────────────────────────────────────────────────────────────┘
@@ -211,7 +211,7 @@ OpenClaw optimizes for broad personal capability across 50+ integrations. Wombat
 
 ### Feature Comparison Summary
 
-| Category | Feature | OpenClaw | Wombat |
+| Category | Feature | OpenClaw | Clasper |
 |----------|---------|----------|--------|
 | **Configuration** | Workspace-based config | ✅ | ✅ |
 | | Multi-agent personas | ✅ | ✅ |
@@ -353,7 +353,7 @@ src/lib/
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /api/version` | Wombat version and features |
+| `GET /api/version` | Clasper version and features |
 | `GET /api/compatibility` | Check control plane compatibility |
 
 **Evaluation Endpoints:**
@@ -401,7 +401,7 @@ The Operations Console (v1.2) provides a web UI for operators, protected by OIDC
 **Configuration:**
 ```bash
 OPS_OIDC_ISSUER=https://your-idp.com/
-OPS_OIDC_AUDIENCE=wombat-ops
+OPS_OIDC_AUDIENCE=clasper-ops
 OPS_OIDC_JWKS_URL=https://your-idp.com/.well-known/jwks.json
 OPS_RBAC_CLAIM=roles
 OPS_TENANT_CLAIM=tenant_id
@@ -446,7 +446,7 @@ OPS_TENANT_CLAIM=tenant_id
 - `riskScoring.ts` - Calculate risk scores based on tool breadth, skill maturity, temperature, and data sensitivity
 
 ### Tool System (`src/lib/tools/`)
-- `toolProxy.ts` - Hybrid tool calling (Wombat defines, backend executes)
+- `toolProxy.ts` - Hybrid tool calling (Clasper defines, backend executes)
 - `toolPermissions.ts` - Two-layer permission checking
 
 ### Workspace (`src/lib/workspace/`)
@@ -465,7 +465,7 @@ OPS_TENANT_CLAIM=tenant_id
 - `missionControl.ts` - Backend API client
 - `webhooks.ts` - Completion callbacks
 - `costs.ts` - Usage tracking
-- `controlPlaneVersion.ts` - Validate compatibility between Wombat and control plane
+- `controlPlaneVersion.ts` - Validate compatibility between Clasper and control plane
 
 ### Scripts (`src/scripts/`)
 - `notification_dispatcher.ts` - Polls and forwards notifications
@@ -502,7 +502,7 @@ See [WORKSPACE.md](WORKSPACE.md) for the full specification.
 │       │                                                              │
 │       ▼                                                              │
 │  ┌─────────────────────────────────────────────────────────────┐    │
-│  │  Wombat /api/agents/send                                     │    │
+│  │  Clasper /api/agents/send                                     │    │
 │  │  ┌─────────────────────────────────────────────────────────┐│    │
 │  │  │ 1. Generate Trace ID (UUID v7)                          ││    │
 │  │  │ 2. Extract Tenant Context (from JWT)                    ││    │
@@ -577,7 +577,7 @@ LLM Response (with tool calls)
 ## Auth Model
 
 - **Daemon request auth**: optional `X-Agent-Daemon-Key` header
-- **Agent auth to backend**: `X-Agent-Token` (JWT minted by Wombat using `AGENT_JWT_SECRET`)
+- **Agent auth to backend**: `X-Agent-Token` (JWT minted by Clasper using `AGENT_JWT_SECRET`)
 - **Tenant context**: Extracted from JWT claims (tenant_id, user_id, permissions)
 - **Dispatcher auth**: `X-Internal-Token` (backend internal token)
 
@@ -587,13 +587,13 @@ The `/api/agents/send` endpoint resolves tasks in priority order:
 
 1. **`task_id`** - Use this specific task (backend-owned creation)
 2. **`task_title`** - Find or create task with this title
-3. **`WOMBAT_DEFAULT_TASK`** - Environment variable fallback
+3. **`CLASPER_DEFAULT_TASK`** - Environment variable fallback
 
-This allows backends to fully control task creation or delegate to wombat.
+This allows backends to fully control task creation or delegate to clasper.
 
 ## Context Management
 
-Wombat provides OpenClaw-inspired context management features while remaining stateless.
+Clasper provides OpenClaw-inspired context management features while remaining stateless.
 
 ### Conversation History
 
@@ -638,7 +638,7 @@ When context usage exceeds the threshold (default 75%), responses include a warn
 The `POST /compact` endpoint summarizes older messages:
 
 ```
-Backend                         Wombat
+Backend                         Clasper
    |                              |
    |  POST /compact               |
    |  { messages: [...] }         |
@@ -654,7 +654,7 @@ Backend                         Wombat
 
 ### Memory Files
 
-Wombat can read memory files from the workspace:
+Clasper can read memory files from the workspace:
 
 - `MEMORY.md` - Curated long-term memory
 - `memory/YYYY-MM-DD.md` - Daily logs (today + yesterday)
@@ -663,7 +663,7 @@ Memory content is automatically injected into the system prompt when files exist
 
 ### Time Context
 
-Wombat automatically injects current date, time, and timezone into the system prompt:
+Clasper automatically injects current date, time, and timezone into the system prompt:
 
 ```
 ## Current Time
@@ -674,8 +674,8 @@ Wombat automatically injects current date, time, and timezone into the system pr
 ```
 
 Configure via:
-- `WOMBAT_DEFAULT_TIMEZONE` - Override default timezone
-- `WOMBAT_INCLUDE_TIME_CONTEXT=false` - Disable time injection
+- `CLASPER_DEFAULT_TIMEZONE` - Override default timezone
+- `CLASPER_INCLUDE_TIME_CONTEXT=false` - Disable time injection
 
 ### Cost Tracking
 
@@ -731,7 +731,7 @@ This is useful for:
 
 ### Skills (OpenClaw-Compatible)
 
-Wombat loads skills from `workspace/skills/*/SKILL.md`:
+Clasper loads skills from `workspace/skills/*/SKILL.md`:
 
 ```
 workspace/skills/
@@ -785,11 +785,11 @@ Configure completion callbacks via the `webhook` field:
 }
 ```
 
-Wombat fires an async POST on completion with event type `agent.completed`.
+Clasper fires an async POST on completion with event type `agent.completed`.
 
 ## Portability
 
-Wombat is backend-agnostic as long as the target backend implements the Control Plane Contract.
+Clasper is backend-agnostic as long as the target backend implements the Control Plane Contract.
 
 **Required configuration:**
 - `BACKEND_URL` - Control Plane backend URL
@@ -797,22 +797,22 @@ Wombat is backend-agnostic as long as the target backend implements the Control 
 - `OPENAI_API_KEY` - OpenAI API key
 
 **Workspace configuration:**
-- `WOMBAT_WORKSPACE` - Path to workspace folder (default: `./workspace`)
-- `WOMBAT_DEFAULT_TASK` - Default task title for auto-creation (optional)
+- `CLASPER_WORKSPACE` - Path to workspace folder (default: `./workspace`)
+- `CLASPER_DEFAULT_TASK` - Default task title for auto-creation (optional)
 
 **To use with a new project:**
-1. Clone wombat
+1. Clone clasper
 2. Create a workspace folder with your `SOUL.md`, `AGENTS.md`, etc.
-3. Point `WOMBAT_WORKSPACE` at it
+3. Point `CLASPER_WORKSPACE` at it
 4. Connect to your Control Plane Contract-compatible backend
 
 ## Security
 
-Wombat takes a **security-first, minimal-privilege approach** that is fundamentally different from personal AI assistants. Where tools like OpenClaw optimize for broad capability (shell access, browser control, filesystem writes), Wombat optimizes for **safe, auditable operations** in multi-tenant environments.
+Clasper takes a **security-first, minimal-privilege approach** that is fundamentally different from personal AI assistants. Where tools like OpenClaw optimize for broad capability (shell access, browser control, filesystem writes), Clasper optimizes for **safe, auditable operations** in multi-tenant environments.
 
 ### Security Model: Constrained by Design
 
-| Aspect | OpenClaw | Wombat |
+| Aspect | OpenClaw | Clasper |
 |--------|----------|--------|
 | Shell access | ✅ Full | ❌ None |
 | Browser control | ✅ Full | ❌ None |
@@ -841,7 +841,7 @@ This constrained model means:
 
 ### What Agents Can Do
 
-Wombat agents are constrained by design:
+Clasper agents are constrained by design:
 
 | Capability | Allowed | Notes |
 |------------|---------|-------|
@@ -854,7 +854,7 @@ Wombat agents are constrained by design:
 
 ### What Agents Cannot Do
 
-Unlike OpenClaw (which has full host access), Wombat agents have no capability to:
+Unlike OpenClaw (which has full host access), Clasper agents have no capability to:
 - Run shell commands or scripts
 - Access the local filesystem (except workspace read)
 - Control browsers or fill forms
@@ -865,14 +865,14 @@ All "dangerous" capabilities are owned by the backend, not the daemon.
 
 ### Tool Blast Radius
 
-OpenClaw documents "blast radius" for each tool (local vs network vs irreversible). For Wombat:
+OpenClaw documents "blast radius" for each tool (local vs network vs irreversible). For Clasper:
 
 | Action | Blast Radius | Who Owns It |
 |--------|--------------|-------------|
-| Generate LLM response | Local | Wombat |
-| Post message to task | Backend (reversible) | Wombat → Backend |
-| Create document | Backend (reversible) | Wombat → Backend |
-| Create task | Backend (reversible) | Wombat → Backend |
+| Generate LLM response | Local | Clasper |
+| Post message to task | Backend (reversible) | Clasper → Backend |
+| Create document | Backend (reversible) | Clasper → Backend |
+| Create task | Backend (reversible) | Clasper → Backend |
 | External API calls | Network (varies) | Backend only |
 | Destructive operations | Varies | Backend only |
 

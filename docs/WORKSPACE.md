@@ -1,6 +1,6 @@
 # Workspace Configuration
 
-Wombat uses a **workspace folder** for portable agent configuration. Instead of hardcoding personas and rules in code, you provide markdown files that define your agent's behavior.
+Clasper uses a **workspace folder** for portable agent configuration. Instead of hardcoding personas and rules in code, you provide markdown files that define your agent's behavior.
 
 This pattern is inspired by [OpenClaw](https://openclaw.ai/) and enables:
 - Easy customization without code changes
@@ -13,8 +13,8 @@ This pattern is inspired by [OpenClaw](https://openclaw.ai/) and enables:
 Set via environment variable:
 
 ```bash
-WOMBAT_WORKSPACE=./workspace  # Default
-WOMBAT_WORKSPACE=/app/my-project/agent-config
+CLASPER_WORKSPACE=./workspace  # Default
+CLASPER_WORKSPACE=/app/my-project/agent-config
 ```
 
 ## File Structure
@@ -230,7 +230,7 @@ Information about the user for personalization.
 
 ### BOOT.md (One-Time Initialization)
 
-Instructions that should only run once on first startup. Wombat tracks completion via a `.boot-complete` marker file.
+Instructions that should only run once on first startup. Clasper tracks completion via a `.boot-complete` marker file.
 
 ```markdown
 ## First Run Setup
@@ -247,7 +247,7 @@ Once complete, call POST /boot/complete to mark setup as done.
 
 ### Skills (OpenClaw-Compatible)
 
-Wombat supports OpenClaw-compatible skills in `workspace/skills/`. Each skill is a folder containing a `SKILL.md` file with YAML frontmatter.
+Clasper supports OpenClaw-compatible skills in `workspace/skills/`. Each skill is a folder containing a `SKILL.md` file with YAML frontmatter.
 
 **Skill Format:**
 
@@ -288,7 +288,7 @@ Use `GET /skills` to list all available skills and their status.
 
 ## System Prompt Construction
 
-Wombat builds the system prompt by combining:
+Clasper builds the system prompt by combining:
 
 1. **SOUL.md** (or role-specific `souls/<role>.md`)
 2. **AGENTS.md** (prefixed with "## Operating Rules")
@@ -357,7 +357,7 @@ OpenClaw uses a `HEARTBEAT_OK` response contract:
 - This acknowledgment can be suppressed to avoid noise
 - Only actual alerts/actions get delivered
 
-For wombat heartbeats, consider adopting this pattern in your `HEARTBEAT.md`:
+For clasper heartbeats, consider adopting this pattern in your `HEARTBEAT.md`:
 
 ```markdown
 ## On Wake Checklist
@@ -381,9 +381,9 @@ workspace/
 └── WORKING.md         # Current task state
 ```
 
-**Wombat now supports memory files:**
+**Clasper now supports memory files:**
 
-Wombat automatically loads memory files when building the system prompt:
+Clasper automatically loads memory files when building the system prompt:
 
 | File | Description |
 |------|-------------|
@@ -413,16 +413,16 @@ For shared context across users, use Mission Control (database) instead.
 
 OpenClaw recommends keeping bootstrap files under 20,000 characters each to avoid prompt bloat. Large files are truncated when injected into the system prompt.
 
-For wombat:
+For clasper:
 - Keep SOUL.md under 2,000 words
 - Keep AGENTS.md focused on essential rules
 - Keep HEARTBEAT.md to a short checklist
 
-## What Wombat Adopts from OpenClaw
+## What Clasper Adopts from OpenClaw
 
-Based on research from [OpenClaw's documentation](https://docs.openclaw.ai/), wombat adopts these patterns:
+Based on research from [OpenClaw's documentation](https://docs.openclaw.ai/), clasper adopts these patterns:
 
-| Pattern | OpenClaw | Wombat |
+| Pattern | OpenClaw | Clasper |
 |---------|----------|--------|
 | Workspace-based config | ✅ | ✅ |
 | AGENTS.md (operating rules) | ✅ | ✅ |
@@ -433,9 +433,9 @@ Based on research from [OpenClaw's documentation](https://docs.openclaw.ai/), wo
 | HEARTBEAT.md (checklist) | ✅ | ✅ |
 | USER.md (user profile) | ✅ | ✅ |
 
-## What Wombat Does Differently
+## What Clasper Does Differently
 
-| Pattern | OpenClaw | Wombat |
+| Pattern | OpenClaw | Clasper |
 |---------|----------|--------|
 | BOOTSTRAP.md (first-run ritual) | ✅ | ❌ (not needed - backend handles onboarding) |
 | BOOT.md (gateway restart) | ✅ | ❌ (stateless daemon) |
@@ -445,11 +445,11 @@ Based on research from [OpenClaw's documentation](https://docs.openclaw.ai/), wo
 | Vector memory search | ✅ (SQLite + embeddings) | ❌ (backend handles search) |
 | Self-modifying prompts | ✅ (agent can edit workspace) | ❌ (workspace is read-only) |
 
-## Feature Comparison: Wombat vs OpenClaw
+## Feature Comparison: Clasper vs OpenClaw
 
 ### Workspace Configuration
 
-| Feature | OpenClaw | Wombat | Notes |
+| Feature | OpenClaw | Clasper | Notes |
 |---------|----------|--------|-------|
 | `AGENTS.md` | ✅ | ✅ | Operating rules |
 | `SOUL.md` | ✅ | ✅ | Agent persona |
@@ -465,7 +465,7 @@ Based on research from [OpenClaw's documentation](https://docs.openclaw.ai/), wo
 
 ### Context Management
 
-| Feature | OpenClaw | Wombat | Notes |
+| Feature | OpenClaw | Clasper | Notes |
 |---------|----------|--------|-------|
 | Conversation history | ✅ | ✅ | `messages[]` array |
 | Token usage tracking | ✅ | ✅ | In every response |
@@ -477,7 +477,7 @@ Based on research from [OpenClaw's documentation](https://docs.openclaw.ai/), wo
 
 ### Cost & Usage
 
-| Feature | OpenClaw | Wombat | Notes |
+| Feature | OpenClaw | Clasper | Notes |
 |---------|----------|--------|-------|
 | Cost per request | ✅ | ✅ | In response |
 | Aggregate usage | ✅ | ✅ | `GET /usage` |
@@ -485,7 +485,7 @@ Based on research from [OpenClaw's documentation](https://docs.openclaw.ai/), wo
 
 ### Reliability
 
-| Feature | OpenClaw | Wombat | Notes |
+| Feature | OpenClaw | Clasper | Notes |
 |---------|----------|--------|-------|
 | Model failover | ✅ | ✅ | Auto-fallback |
 | Retry with backoff | ✅ | ✅ | Exponential + jitter |
@@ -493,7 +493,7 @@ Based on research from [OpenClaw's documentation](https://docs.openclaw.ai/), wo
 
 ### Skills
 
-| Feature | OpenClaw | Wombat | Notes |
+| Feature | OpenClaw | Clasper | Notes |
 |---------|----------|--------|-------|
 | `SKILL.md` format | ✅ | ✅ | Same format! |
 | YAML frontmatter | ✅ | ✅ | name, description, metadata |
@@ -503,25 +503,25 @@ Based on research from [OpenClaw's documentation](https://docs.openclaw.ai/), wo
 | `always: true` | ✅ | ✅ | Bypass gates |
 | Emoji in prompt | ✅ | ✅ | `metadata.openclaw.emoji` |
 | ClawHub registry | ✅ | ❌ | Not integrated |
-| Self-modifying skills | ✅ | ❌ | Wombat is stateless |
+| Self-modifying skills | ✅ | ❌ | Clasper is stateless |
 
 ### Streaming & Webhooks
 
-| Feature | OpenClaw | Wombat | Notes |
+| Feature | OpenClaw | Clasper | Notes |
 |---------|----------|--------|-------|
 | SSE streaming | ✅ | ✅ | `POST /api/agents/stream` |
 | Webhooks | Varies | ✅ | Completion callbacks |
-| HMAC signing | - | ✅ | `X-Wombat-Signature` |
+| HMAC signing | - | ✅ | `X-Clasper-Signature` |
 
-### NOT in Wombat (OpenClaw-only)
+### NOT in Clasper (OpenClaw-only)
 
-| Feature | Why Not in Wombat |
+| Feature | Why Not in Clasper |
 |---------|-------------------|
-| Chat app integration | Wombat is API-only, not chat-first |
+| Chat app integration | Clasper is API-only, not chat-first |
 | Browser control | Backend handles web access |
 | Shell/file access | Backend handles system access |
 | Cron jobs | Backend handles scheduling |
-| Session persistence | Wombat is stateless |
+| Session persistence | Clasper is stateless |
 | Self-modifying skills | Workspace is read-only |
 | 50+ integrations | Backend handles integrations |
 
@@ -556,4 +556,4 @@ These features could be added if needed:
 2. **File caching with TTL** - Reload workspace files periodically for hot updates
 3. **Dynamic skill loading** - Load skill instructions on-demand (like OpenClaw's SKILL.md)
 
-See [ARCHITECTURE.md](ARCHITECTURE.md#wombat-vs-openclaw) for a detailed comparison.
+See [ARCHITECTURE.md](ARCHITECTURE.md#clasper-vs-openclaw) for a detailed comparison.

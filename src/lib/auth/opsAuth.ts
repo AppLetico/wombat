@@ -190,7 +190,7 @@ export async function requireOpsContextFromHeaders(
   if (!match) {
     throw new OpsAuthError("Invalid Authorization header", "missing_token");
   }
-  if (process.env.WOMBAT_TEST_MODE === "true") {
+  if (process.env.CLASPER_TEST_MODE === "true") {
     return {
       userId: "test-user",
       tenantId: "test-tenant",

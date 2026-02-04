@@ -14,11 +14,11 @@ vi.mock("../lib/integrations/missionControl.js", () => ({
 let buildApp: () => any;
 
 beforeAll(async () => {
-  process.env.WOMBAT_TEST_MODE = "true";
+  process.env.CLASPER_TEST_MODE = "true";
   process.env.AGENT_JWT_SECRET = "test-secret";
   process.env.AGENT_DAEMON_API_KEY = "";
   process.env.BACKEND_URL = "http://localhost:8000";
-  process.env.WOMBAT_WORKSPACE = "./test-workspace";
+  process.env.CLASPER_WORKSPACE = "./test-workspace";
   const mod = await import("./index.js");
   buildApp = mod.buildApp;
 });
@@ -66,9 +66,9 @@ describe("/api/agents/send", () => {
     expect(body.task_id).toBe("existing-task-123");
   });
 
-  it("uses WOMBAT_DEFAULT_TASK when no task_id or task_title provided", async () => {
+  it("uses CLASPER_DEFAULT_TASK when no task_id or task_title provided", async () => {
     // Note: Config is loaded at module import time, so we test the behavior
-    // when WOMBAT_DEFAULT_TASK is set (which it is in test env)
+    // when CLASPER_DEFAULT_TASK is set (which it is in test env)
     // The actual "no task specified" error path is tested implicitly through
     // the integration when config.defaultTaskTitle is empty
     
@@ -80,11 +80,11 @@ describe("/api/agents/send", () => {
         user_id: "user-1",
         session_key: "user:user-1:agent",
         message: "Hello"
-        // No task_id or task_title - should use WOMBAT_DEFAULT_TASK from env
+        // No task_id or task_title - should use CLASPER_DEFAULT_TASK from env
       }
     });
 
-    // When WOMBAT_DEFAULT_TASK is set, it should succeed
+    // When CLASPER_DEFAULT_TASK is set, it should succeed
     // (creates or finds task with that title)
     expect(response.statusCode).toBe(200);
     const body = response.json();

@@ -11,7 +11,7 @@ describe('TraceAnnotations', () => {
 
   beforeEach(() => {
     // Use in-memory database for tests
-    process.env.WOMBAT_DB_PATH = ':memory:';
+    process.env.CLASPER_DB_PATH = ':memory:';
     initDatabase();
     annotations = getTraceAnnotations();
 
@@ -26,7 +26,7 @@ describe('TraceAnnotations', () => {
   afterEach(() => {
     resetTraceAnnotations();
     closeDatabase();
-    delete process.env.WOMBAT_DB_PATH;
+    delete process.env.CLASPER_DB_PATH;
   });
 
   describe('annotate', () => {

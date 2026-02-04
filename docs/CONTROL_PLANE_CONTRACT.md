@@ -1,17 +1,17 @@
 # Control Plane Contract (v1)
 
-This document defines the **minimum backend contract** required for Wombat to operate.
+This document defines the **minimum backend contract** required for Clasper to operate.
 Any backend that implements this contract is considered **Mission Control v1 compatible**.
 
 ## Summary
 
-Wombat is a stateless agent runtime. It depends on a backend control plane to:
+Clasper is a stateless agent runtime. It depends on a backend control plane to:
 
 - persist tasks, messages, and documents
 - enforce tenant isolation by `user_id`
 - support idempotent writes
 
-Wombat integrates over HTTP. It does **not** require direct database access.
+Clasper integrates over HTTP. It does **not** require direct database access.
 
 ## Versioning + Compatibility
 
@@ -209,6 +209,6 @@ These are not required for baseline compatibility, but unlock extra features:
 
 ## References
 
-- Wombat Integration Guide: `docs/INTEGRATION.md`
-- Wombat API: `docs/API.md`
+- Clasper Integration Guide: `docs/INTEGRATION.md`
+- Clasper API: `docs/API.md`
 - OpenAPI: `docs/control-plane.openapi.yaml`

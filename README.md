@@ -1,7 +1,7 @@
-# Wombat Ops
+# Clasper Ops
 
 <p align="center">
-  <img src="wombat-banner.png" alt="Wombat" width="100%" />
+  <img src="clasper-banner.png" alt="Clasper" width="100%" />
 </p>
 
 <h2 align="center">Production Agent Runtime with Governance & Observability</h2>
@@ -21,16 +21,16 @@
 
 ---
 
-**Wombat** is an API-first, stateless agent execution platform designed for **production SaaS integration**. It enables workspace-driven agents with **traceable behavior, governance controls, role-based access, cost/risk guards, and operational visibility** — suitable for multi-tenant backends and audit-intensive environments.
+**Clasper** is an API-first, stateless agent execution platform designed for **production SaaS integration**. It enables workspace-driven agents with **traceable behavior, governance controls, role-based access, cost/risk guards, and operational visibility** — suitable for multi-tenant backends and audit-intensive environments.
 
-Inspired by [OpenClaw](https://openclaw.ai/)'s workspace pattern, Wombat adapts these ideas into a **multi-tenant, stateless, API-first orchestration and governance platform** for backend agents.
+Inspired by [OpenClaw](https://openclaw.ai/)'s workspace pattern, Clasper adapts these ideas into a **multi-tenant, stateless, API-first orchestration and governance platform** for backend agents.
 
 > *"AI agents are not demos. They are production systems."*
-> Read the [Wombat Ops Manifesto](docs/MANIFESTO.md)
+> Read the [Clasper Ops Manifesto](docs/MANIFESTO.md)
 
 ---
 
-## What Wombat Is
+## What Clasper Is
 
 - **Stateless HTTP runtime** for agent executions
 - **Workspace-driven prompt config** (SOUL.md, AGENTS.md, HEARTBEAT.md, skills)
@@ -40,7 +40,7 @@ Inspired by [OpenClaw](https://openclaw.ai/)'s workspace pattern, Wombat adapts 
 - **Operational guardrails** (RBAC, budgets, risk scoring, audit logs)
 - **Control Plane Contract** for portable backend integration
 
-## What Wombat Is Not
+## What Clasper Is Not
 
 - A daemon for OS/browser automation (no shell access, no file system)
 - A personal agent chatbot (designed for backend integration, not direct chat)
@@ -49,13 +49,13 @@ Inspired by [OpenClaw](https://openclaw.ai/)'s workspace pattern, Wombat adapts 
 
 ---
 
-## How Wombat Works With Your Backend
+## How Clasper Works With Your Backend
 
-Wombat has a **bidirectional relationship** with your SaaS backend:
+Clasper has a **bidirectional relationship** with your SaaS backend:
 
 ```
 ┌─────────────┐                              ┌─────────────┐
-│   Your      │ ────── (1) send message ───▶ │   Wombat    │ ──▶ OpenAI
+│   Your      │ ────── (1) send message ───▶ │   Clasper    │ ──▶ OpenAI
 │   Backend   │                              │   Daemon    │
 │             │ ◀── (2) agent calls APIs ─── │             │
 └─────────────┘                              └─────────────┘
@@ -68,12 +68,12 @@ Wombat has a **bidirectional relationship** with your SaaS backend:
      └──────────────────────────────────────────────┘
 ```
 
-1. **Your backend sends messages** to Wombat (`POST /api/agents/send`)
-2. **Wombat calls an LLM** with workspace-configured prompts (personas, rules, skills)
+1. **Your backend sends messages** to Clasper (`POST /api/agents/send`)
+2. **Clasper calls an LLM** with workspace-configured prompts (personas, rules, skills)
 3. **The agent response may call your APIs** to create tasks, post messages, etc.
-4. **Your backend remains the source of truth** — Wombat is stateless
+4. **Your backend remains the source of truth** — Clasper is stateless
 
-This means you can run multiple Wombat instances behind a load balancer with no sticky sessions.
+This means you can run multiple Clasper instances behind a load balancer with no sticky sessions.
 
 See [INTEGRATION.md](docs/INTEGRATION.md) for the full integration guide.
 
@@ -101,7 +101,7 @@ See [INTEGRATION.md](docs/INTEGRATION.md) for the full integration guide.
 └─────────────────────────────┬───────────────────────────────────┘
                               │
 ┌─────────────────────────────▼───────────────────────────────────┐
-│                     Wombat Ops API                              │
+│                     Clasper Ops API                              │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │
 │  │ Agent API   │  │ Ops Console │  │ Governance              │  │
 │  │ /api/agents │  │ /ops        │  │ RBAC, Budgets, Risk     │  │
@@ -119,7 +119,7 @@ See [INTEGRATION.md](docs/INTEGRATION.md) for the full integration guide.
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-Wombat integrates with your backend via the **Control Plane Contract** — a standardized HTTP API for tasks, messages, and documents. Your backend remains the source of truth; Wombat handles reasoning, execution, and governance.
+Clasper integrates with your backend via the **Control Plane Contract** — a standardized HTTP API for tasks, messages, and documents. Your backend remains the source of truth; Clasper handles reasoning, execution, and governance.
 
 ---
 
@@ -204,7 +204,7 @@ Scaffold a workspace from the built-in template:
 ```bash
 npm run init-workspace
 # or: make workspace
-# or: npx wombat init
+# or: npx clasper init
 ```
 
 #### 3) Configure Environment
@@ -224,10 +224,10 @@ ANTHROPIC_API_KEY=sk-ant-...
 GEMINI_API_KEY=...
 
 # Workspace
-WOMBAT_WORKSPACE=./workspace
+CLASPER_WORKSPACE=./workspace
 
-# Database (optional, defaults to ./wombat.db)
-WOMBAT_DB_PATH=./wombat.db
+# Database (optional, defaults to ./clasper.db)
+CLASPER_DB_PATH=./clasper.db
 ```
 
 #### 4) Run
@@ -267,11 +267,11 @@ DEEP_LINK_MSG_TEMPLATE=
 
 ---
 
-## Wombat vs OpenClaw
+## Clasper vs OpenClaw
 
-Wombat was inspired by OpenClaw's workspace pattern but evolved for a different context: **multi-tenant SaaS backends** with **production governance requirements**.
+Clasper was inspired by OpenClaw's workspace pattern but evolved for a different context: **multi-tenant SaaS backends** with **production governance requirements**.
 
-| Feature | OpenClaw | Wombat |
+| Feature | OpenClaw | Clasper |
 |---------|----------|--------|
 | **Deployment** | Persistent daemon | Stateless HTTP service |
 | **Target context** | Single user / personal assistant | Multi-tenant SaaS backends |
@@ -284,7 +284,7 @@ Wombat was inspired by OpenClaw's workspace pattern but evolved for a different 
 | **Memory** | Local filesystem | Backend database via Control Plane |
 | **Suitability** | Personal assistants | Production backend integrations |
 
-### What Wombat Adopts from OpenClaw
+### What Clasper Adopts from OpenClaw
 
 | Pattern | Description |
 |---------|-------------|
@@ -296,9 +296,9 @@ Wombat was inspired by OpenClaw's workspace pattern but evolved for a different 
 | `skills/*/SKILL.md` | OpenClaw-compatible skill format |
 | `HEARTBEAT_OK` contract | Silent acknowledgment pattern |
 
-### What Wombat Does Differently
+### What Clasper Does Differently
 
-| Pattern | OpenClaw | Wombat |
+| Pattern | OpenClaw | Clasper |
 |---------|----------|--------|
 | `memory/` directory | Local filesystem | Backend database |
 | Session persistence | Persistent daemon state | Stateless (no sessions) |
@@ -310,11 +310,11 @@ Wombat was inspired by OpenClaw's workspace pattern but evolved for a different 
 
 ## Control Plane Integration
 
-Wombat integrates with your backend via the **Control Plane Contract v1** — a standardized HTTP API.
+Clasper integrates with your backend via the **Control Plane Contract v1** — a standardized HTTP API.
 
 ### Adoption Checklist
 
-When integrating Wombat with a new backend:
+When integrating Clasper with a new backend:
 
 - [ ] Implement the **Control Plane Contract v1** endpoints
 - [ ] Ensure `X-Agent-Token` JWTs validate and enforce `user_id` scoping
@@ -436,7 +436,7 @@ Full details in [docs/API.md](docs/API.md).
 
 ## Multi-Provider LLM Support
 
-Wombat supports multiple LLM providers via [pi-ai](https://github.com/badlogic/pi-mono):
+Clasper supports multiple LLM providers via [pi-ai](https://github.com/badlogic/pi-mono):
 
 | Provider | Models | API Key Env Var |
 |----------|--------|-----------------|
@@ -473,10 +473,10 @@ src/lib/
 ```bash
 npm run build
 npm link
-wombat init [dir]     # Create workspace from template
-wombat serve          # Start the daemon server
-wombat dispatcher     # Run notification dispatcher
-wombat heartbeat      # Run heartbeat check
+clasper init [dir]     # Create workspace from template
+clasper serve          # Start the daemon server
+clasper dispatcher     # Run notification dispatcher
+clasper heartbeat      # Run heartbeat check
 ```
 
 A **Makefile** is provided for common tasks: `make setup`, `make dev`, `make test`, `make conformance`.
@@ -488,7 +488,7 @@ A **Makefile** is provided for common tasks: `make setup`, `make dev`, `make tes
 | Document | Description |
 |----------|-------------|
 | [docs/QUICKSTART.md](docs/QUICKSTART.md) | **Complete getting started guide** |
-| [docs/INTEGRATION.md](docs/INTEGRATION.md) | Backend ↔ Wombat integration patterns |
+| [docs/INTEGRATION.md](docs/INTEGRATION.md) | Backend ↔ Clasper integration patterns |
 | [docs/CONTROL_PLANE_CONTRACT.md](docs/CONTROL_PLANE_CONTRACT.md) | Backend API contract specification |
 | [docs/WORKSPACE.md](docs/WORKSPACE.md) | Workspace specification (SOUL, AGENTS, skills) |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | System architecture and design |

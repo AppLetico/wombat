@@ -47,7 +47,7 @@ describe("MyModule", () => {
 
 ## Portability guidelines
 
-Wombat is designed to be reusable across projects:
+Clasper is designed to be reusable across projects:
 
 1. **No hardcoded domain logic** - Use workspace files for personas/rules
 2. **Configurable via env vars** - Add new config to `.env.example`

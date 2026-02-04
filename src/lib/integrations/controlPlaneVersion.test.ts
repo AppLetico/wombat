@@ -7,7 +7,7 @@ import {
   validateControlPlaneVersion,
   createVersionChecker,
   fetchControlPlaneCapabilities,
-  WOMBAT_CONTRACT_VERSION,
+  CLASPER_CONTRACT_VERSION,
   MIN_CONTRACT_VERSION,
   REQUIRED_FEATURES,
 } from './controlPlaneVersion.js';
@@ -29,7 +29,7 @@ describe('fetchControlPlaneCapabilities', () => {
       ok: true,
       json: () => Promise.resolve({
         version: '1.0.0',
-        contract_version: WOMBAT_CONTRACT_VERSION,
+        contract_version: CLASPER_CONTRACT_VERSION,
         features: [...REQUIRED_FEATURES],
         endpoints: ['/api/agents/send'],
       }),
@@ -38,7 +38,7 @@ describe('fetchControlPlaneCapabilities', () => {
     const result = await fetchControlPlaneCapabilities('http://localhost:3000');
 
     expect(result).not.toBeNull();
-    expect(result?.contractVersion).toBe(WOMBAT_CONTRACT_VERSION);
+    expect(result?.contractVersion).toBe(CLASPER_CONTRACT_VERSION);
     expect(result?.features).toEqual([...REQUIRED_FEATURES]);
   });
 
@@ -79,7 +79,7 @@ describe('validateControlPlaneVersion', () => {
       ok: true,
       json: () => Promise.resolve({
         version: '1.0.0',
-        contract_version: WOMBAT_CONTRACT_VERSION,
+        contract_version: CLASPER_CONTRACT_VERSION,
         features: [...REQUIRED_FEATURES],
         endpoints: [],
       }),
@@ -88,7 +88,7 @@ describe('validateControlPlaneVersion', () => {
     const result = await validateControlPlaneVersion('http://localhost:3000');
 
     expect(result.compatible).toBe(true);
-    expect(result.wombatContractVersion).toBe(WOMBAT_CONTRACT_VERSION);
+    expect(result.clasperContractVersion).toBe(CLASPER_CONTRACT_VERSION);
   });
 
   it('should return incompatible for version below minimum', async () => {
@@ -113,7 +113,7 @@ describe('validateControlPlaneVersion', () => {
       ok: true,
       json: () => Promise.resolve({
         version: '1.0.0',
-        contract_version: WOMBAT_CONTRACT_VERSION,
+        contract_version: CLASPER_CONTRACT_VERSION,
         features: [], // missing required features
         endpoints: [],
       }),
@@ -164,7 +164,7 @@ describe('createVersionChecker', () => {
       ok: true,
       json: () => Promise.resolve({
         version: '1.0.0',
-        contract_version: WOMBAT_CONTRACT_VERSION,
+        contract_version: CLASPER_CONTRACT_VERSION,
         features: [...REQUIRED_FEATURES],
         endpoints: [],
       }),
@@ -187,7 +187,7 @@ describe('createVersionChecker', () => {
       ok: true,
       json: () => Promise.resolve({
         version: '1.0.0',
-        contract_version: WOMBAT_CONTRACT_VERSION,
+        contract_version: CLASPER_CONTRACT_VERSION,
         features: [...REQUIRED_FEATURES],
         endpoints: [],
       }),
@@ -209,7 +209,7 @@ describe('contract constants', () => {
   it('should export valid semver versions', () => {
     const semverRegex = /^\d+\.\d+\.\d+$/;
 
-    expect(WOMBAT_CONTRACT_VERSION).toMatch(semverRegex);
+    expect(CLASPER_CONTRACT_VERSION).toMatch(semverRegex);
     expect(MIN_CONTRACT_VERSION).toMatch(semverRegex);
   });
 

@@ -10,7 +10,7 @@ COPY src ./src
 
 RUN npm run build
 
-ENV WOMBAT_PORT=8081
+ENV CLASPER_PORT=8081
 EXPOSE 8081
 
 CMD ["node", "dist/server/index.js"]

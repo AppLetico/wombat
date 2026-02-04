@@ -1,11 +1,11 @@
-Perfect. This deserves a **serious, first-principles PRD**, because if this is done sloppily it destroys Wombat’s value — and if it’s done correctly, it becomes a **real moat**.
+Perfect. This deserves a **serious, first-principles PRD**, because if this is done sloppily it destroys Clasper’s value — and if it’s done correctly, it becomes a **real moat**.
 
 Below is a **full, end-to-end PRD** for **OpenClaw Integration as a Governed Execution Surface**.
-This is written assuming **Wombat Ops v1.2.1 is the baseline** and nothing regresses.
+This is written assuming **Clasper Ops v1.2.1 is the baseline** and nothing regresses.
 
 ---
 
-# **Wombat Ops – Governed OpenClaw Integration PRD**
+# **Clasper Ops – Governed OpenClaw Integration PRD**
 
 ## Product Name
 
@@ -19,11 +19,11 @@ This is written assuming **Wombat Ops v1.2.1 is the baseline** and nothing regre
 
 ## Executive Summary
 
-This PRD defines how **OpenClaw** can be integrated into **Wombat Ops** as a **high-risk, governed execution surface**, without compromising Wombat’s guarantees around safety, auditability, multi-tenancy, and operational control.
+This PRD defines how **OpenClaw** can be integrated into **Clasper Ops** as a **high-risk, governed execution surface**, without compromising Clasper’s guarantees around safety, auditability, multi-tenancy, and operational control.
 
 The core principle is:
 
-> **OpenClaw executes. Wombat governs.**
+> **OpenClaw executes. Clasper governs.**
 
 OpenClaw is treated as a **tool**, not a peer system, and never becomes a source of truth.
 
@@ -31,8 +31,8 @@ OpenClaw is treated as a **tool**, not a peer system, and never becomes a source
 
 ## Goals
 
-1. Allow Wombat-managed agents to perform **embodied actions** (browser, filesystem, OS, automation)
-2. Preserve Wombat’s guarantees:
+1. Allow Clasper-managed agents to perform **embodied actions** (browser, filesystem, OS, automation)
+2. Preserve Clasper’s guarantees:
 
    * determinism
    * auditability
@@ -50,7 +50,7 @@ OpenClaw is treated as a **tool**, not a peer system, and never becomes a source
 * No OpenClaw-managed identity
 * No OpenClaw background autonomy (cron, heartbeats)
 * No OpenClaw memory as source of truth
-* No OpenClaw → Wombat callbacks
+* No OpenClaw → Clasper callbacks
 * No OpenClaw direct UI access
 
 If any of the above are violated, the integration is **invalid**.
@@ -59,7 +59,7 @@ If any of the above are violated, the integration is **invalid**.
 
 ## Core Design Principle
 
-> **OpenClaw is a high-risk delegated execution tool invoked explicitly and synchronously by Wombat.**
+> **OpenClaw is a high-risk delegated execution tool invoked explicitly and synchronously by Clasper.**
 
 This is identical in philosophy to:
 
@@ -79,7 +79,7 @@ Just with a much higher blast radius.
 └────────┬───────────┘
          ↓
 ┌──────────────────────────────┐
-│        Wombat Ops             │
+│        Clasper Ops             │
 │  (RBAC, Risk, Budget, Trace)  │
 └────────┬─────────────────────┘
          ↓ (approved tool call)
@@ -220,7 +220,7 @@ All OpenClaw executions that exceed baseline risk require:
 
 ### 3.1 Trace Wrapping
 
-OpenClaw execution appears as **a single governed step** inside the Wombat trace:
+OpenClaw execution appears as **a single governed step** inside the Clasper trace:
 
 ```
 [ Agent Step ]
@@ -230,7 +230,7 @@ OpenClaw execution appears as **a single governed step** inside the Wombat trace
 [ OpenClaw Execution Summary ]
 ```
 
-Wombat records:
+Clasper records:
 
 * why it was invoked
 * what scope was granted
@@ -256,7 +256,7 @@ Mandatory audit events:
 
 ### 4.1 Identity Ownership
 
-* **Wombat owns identity**
+* **Clasper owns identity**
 * OpenClaw receives only an execution token
 * No tenant credentials ever shared
 
@@ -371,12 +371,12 @@ No rewrite. No governance logic added to OpenClaw.
 
 ## Final Positioning Statement
 
-> **Wombat Ops governs agent behavior.
+> **Clasper Ops governs agent behavior.
 > OpenClaw executes high-risk actions under strict control.**
 
 This preserves:
 
-* Wombat’s trust guarantees
+* Clasper’s trust guarantees
 * OpenClaw’s strengths
 * A clean separation of concerns
 
@@ -389,7 +389,7 @@ If OpenClaw is ever allowed to:
 * wake itself
 * remember across runs
 * act without approval
-* bypass Wombat tracing
+* bypass Clasper tracing
 
 **The integration must be considered a failure.**
 
@@ -406,7 +406,7 @@ This is the kind of integration that defines a platform’s future — and this 
 
 ---
 
-Great question — **where it runs is the whole ballgame** for keeping Wombat trustworthy.
+Great question — **where it runs is the whole ballgame** for keeping Clasper trustworthy.
 
 Here’s the clear, correct answer, then the trade-offs.
 
@@ -414,24 +414,24 @@ Here’s the clear, correct answer, then the trade-offs.
 
 ## The short, correct answer
 
-> **OpenClaw agents must run *outside* of Wombat, in a separate execution environment, invoked ephemerally per request.**
+> **OpenClaw agents must run *outside* of Clasper, in a separate execution environment, invoked ephemerally per request.**
 
-**Never inside the Wombat process.
+**Never inside the Clasper process.
 Never as a long-lived peer.
 Never with shared state.**
 
-Wombat stays a **governor**.
+Clasper stays a **governor**.
 OpenClaw stays an **executor**.
 
 ---
 
-## The only architecture that preserves Wombat’s guarantees
+## The only architecture that preserves Clasper’s guarantees
 
 ### Canonical model (recommended)
 
 ```
 ┌──────────────┐
-│  Wombat Ops  │
+│  Clasper Ops  │
 │ (stateless)  │
 └──────┬───────┘
        │  governed tool call
@@ -450,8 +450,8 @@ OpenClaw stays an **executor**.
 
 **Key properties**
 
-* Wombat **never hosts** OpenClaw
-* Wombat **never trusts** OpenClaw state
+* Clasper **never hosts** OpenClaw
+* Clasper **never trusts** OpenClaw state
 * Each execution:
 
   * starts fresh
@@ -463,7 +463,7 @@ This preserves:
 * tenant isolation
 * auditability
 * blast-radius control
-* deterministic reasoning at the Wombat layer
+* deterministic reasoning at the Clasper layer
 
 ---
 
@@ -531,7 +531,7 @@ Shell access, filesystem writes, sensitive tenants.
 **What it is**
 
 * OpenClaw runs on a developer machine
-* Wombat points to it as a delegated executor
+* Clasper points to it as a delegated executor
 
 **Rules**
 
@@ -548,7 +548,7 @@ Shell access, filesystem writes, sensitive tenants.
 
 These are hard NOs:
 
-### ❌ Inside the Wombat process
+### ❌ Inside the Clasper process
 
 * Breaks statelessness
 * Destroys trust boundary
@@ -576,23 +576,23 @@ These are hard NOs:
 
 | Responsibility | Owner                    |
 | -------------- | ------------------------ |
-| Identity       | **Wombat**               |
-| Authorization  | **Wombat**               |
-| Risk scoring   | **Wombat**               |
-| Approval       | **Human via Wombat Ops** |
+| Identity       | **Clasper**               |
+| Authorization  | **Clasper**               |
+| Risk scoring   | **Clasper**               |
+| Approval       | **Human via Clasper Ops** |
 | Execution      | **OpenClaw**             |
 | Sandbox        | **Infra layer**          |
-| Termination    | **Wombat + Infra**       |
-| Audit          | **Wombat**               |
+| Termination    | **Clasper + Infra**       |
+| Audit          | **Clasper**               |
 
 OpenClaw **never decides to run**.
 It is only ever **invoked**.
 
 ---
 
-## How Wombat sees OpenClaw
+## How Clasper sees OpenClaw
 
-From Wombat’s perspective:
+From Clasper’s perspective:
 
 ```ts
 {
@@ -607,7 +607,7 @@ From Wombat’s perspective:
 }
 ```
 
-Wombat does **not** care:
+Clasper does **not** care:
 
 * how OpenClaw thinks
 * how many steps it took
@@ -623,13 +623,13 @@ It only cares about:
 
 ## Why this separation is non-negotiable
 
-If OpenClaw runs inside Wombat:
+If OpenClaw runs inside Clasper:
 
-* Wombat becomes un-auditable
+* Clasper becomes un-auditable
 * A single bug compromises all tenants
 * You lose your platform’s core value
 
-If OpenClaw runs outside Wombat:
+If OpenClaw runs outside Clasper:
 
 * You can reason about failures
 * You can say “no”
@@ -646,7 +646,7 @@ That’s the difference between:
 
 ## The one-sentence answer you can reuse
 
-> **OpenClaw agents run in isolated, ephemeral execution environments outside of Wombat, and are invoked only through Wombat’s governed tool interface.**
+> **OpenClaw agents run in isolated, ephemeral execution environments outside of Clasper, and are invoked only through Clasper’s governed tool interface.**
 
 That sentence protects your architecture.
 

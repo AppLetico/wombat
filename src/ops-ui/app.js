@@ -57,11 +57,11 @@ let userRole = null;
 let pendingOverrideCallback = null;
 
 function getToken() {
-  return localStorage.getItem("wombat_ops_token") || "";
+  return localStorage.getItem("clasper_ops_token") || "";
 }
 
 function setToken(token) {
-  localStorage.setItem("wombat_ops_token", token);
+  localStorage.setItem("clasper_ops_token", token);
 }
 
 function headers() {

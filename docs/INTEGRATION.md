@@ -1,8 +1,8 @@
 # Integration Guide
 
-Wombat is an **agent runtime** that works alongside your backend SaaS application. It doesn't replace your backend — it extends it with AI agent capabilities while your backend remains the source of truth for all data.
+Clasper is an **agent runtime** that works alongside your backend SaaS application. It doesn't replace your backend — it extends it with AI agent capabilities while your backend remains the source of truth for all data.
 
-**The core idea**: Your backend sends messages to Wombat, Wombat calls an LLM, and the agent's response may include API calls back to your backend to read/write data. This bidirectional relationship is what makes agents useful.
+**The core idea**: Your backend sends messages to Clasper, Clasper calls an LLM, and the agent's response may include API calls back to your backend to read/write data. This bidirectional relationship is what makes agents useful.
 
 ## System Architecture
 
@@ -30,7 +30,7 @@ A typical deployment runs 5 processes that work together:
 │          │                       │                       │                 │
 │          ▼                       ▼                       ▼                 │
 │   ┌─────────────┐         ┌─────────────┐         ┌─────────────┐         │
-│   │   Worker    │         │   Wombat    │◀────────│ Dispatcher  │         │
+│   │   Worker    │         │   Clasper    │◀────────│ Dispatcher  │         │
 │   │ (Celery)    │         │   Daemon    │         │  (Poller)   │         │
 │   │             │         │   (:8081)   │         │             │         │
 │   │ • Async     │         │             │         │ • Polls     │         │
@@ -57,18 +57,18 @@ A typical deployment runs 5 processes that work together:
 | Backend API | 8000 | `make dev` | REST API, Mission Control, auth |
 | Worker | - | `make dev-worker` | Async tasks (Celery) |
 | Frontend | 5173 | `npm run dev` | Web UI |
-| Wombat Daemon | 8081 | `make dev` | Agent runtime, LLM orchestration |
+| Clasper Daemon | 8081 | `make dev` | Agent runtime, LLM orchestration |
 | Dispatcher | - | `npm run dispatcher` | Notification delivery loop |
 
-## The Backend ↔ Wombat Relationship
+## The Backend ↔ Clasper Relationship
 
-This is the key concept to understand: **Wombat and your backend have a bidirectional relationship**.
+This is the key concept to understand: **Clasper and your backend have a bidirectional relationship**.
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                                                                          │
 │   ┌─────────────┐                              ┌─────────────┐          │
-│   │    Your     │ ────── (1) sends message ──▶ │   Wombat    │          │
+│   │    Your     │ ────── (1) sends message ──▶ │   Clasper    │          │
 │   │   Backend   │                              │   Daemon    │          │
 │   │             │ ◀─ (2) agent calls APIs ──── │             │          │
 │   │             │                              │             │          │
@@ -83,17 +83,17 @@ This is the key concept to understand: **Wombat and your backend have a bidirect
 
 ### How it works
 
-1. **Backend → Wombat**: Your backend sends user messages to Wombat via `POST /api/agents/send`. The payload includes `user_id`, `session_key`, and the message.
+1. **Backend → Clasper**: Your backend sends user messages to Clasper via `POST /api/agents/send`. The payload includes `user_id`, `session_key`, and the message.
 
-2. **Wombat → OpenAI → Backend**: Wombat loads the workspace config (AGENTS.md, souls, skills), builds a system prompt, calls OpenAI, and the agent's response may include API calls back to your backend (Mission Control).
+2. **Clasper → OpenAI → Backend**: Clasper loads the workspace config (AGENTS.md, souls, skills), builds a system prompt, calls OpenAI, and the agent's response may include API calls back to your backend (Mission Control).
 
-3. **Wombat → Backend (writes)**: The agent can create tasks, post messages, create documents, etc. by calling your backend's Mission Control APIs. Wombat mints a short-lived JWT for these calls.
+3. **Clasper → Backend (writes)**: The agent can create tasks, post messages, create documents, etc. by calling your backend's Mission Control APIs. Clasper mints a short-lived JWT for these calls.
 
-4. **Backend → Wombat (dispatcher)**: The dispatcher polls your backend for undelivered notifications and forwards them to the Wombat daemon, triggering agent responses.
+4. **Backend → Clasper (dispatcher)**: The dispatcher polls your backend for undelivered notifications and forwards them to the Clasper daemon, triggering agent responses.
 
-### Key insight: Wombat is stateless
+### Key insight: Clasper is stateless
 
-Wombat doesn't store user data, conversation history, or tasks. **Your backend is the source of truth**:
+Clasper doesn't store user data, conversation history, or tasks. **Your backend is the source of truth**:
 
 | What | Where it lives |
 |------|----------------|
@@ -101,16 +101,16 @@ Wombat doesn't store user data, conversation history, or tasks. **Your backend i
 | Conversation history | Backend database (or passed in `messages[]`) |
 | Tasks, documents, activity | Backend (Mission Control tables) |
 | Agent personas, rules | Workspace files (in your backend repo) |
-| LLM execution | Wombat (stateless, just routes requests) |
+| LLM execution | Clasper (stateless, just routes requests) |
 
 This means:
-- You can run **multiple Wombat instances** behind a load balancer
+- You can run **multiple Clasper instances** behind a load balancer
 - No sticky sessions needed
-- If Wombat restarts, nothing is lost (state is in your backend)
+- If Clasper restarts, nothing is lost (state is in your backend)
 
 ### What your backend needs to implement
 
-To integrate with Wombat, your backend needs **Mission Control APIs**:
+To integrate with Clasper, your backend needs **Mission Control APIs**:
 
 | Endpoint | Purpose |
 |----------|---------|
@@ -125,7 +125,7 @@ See [CONTROL_PLANE_CONTRACT.md](CONTROL_PLANE_CONTRACT.md) for the full API spec
 
 ## Backend Configuration
 
-Wombat requires a Mission Control-compatible backend. Configure the connection:
+Clasper requires a Mission Control-compatible backend. Configure the connection:
 
 ```bash
 # Required
@@ -142,28 +142,28 @@ The daemon posts to these Mission Control endpoints:
 
 ## Workspace Configuration
 
-Point wombat to your project's workspace folder:
+Point clasper to your project's workspace folder:
 
 ```bash
 # Relative or absolute path
-WOMBAT_WORKSPACE=./workspace
-WOMBAT_WORKSPACE=/path/to/project/agent-config
+CLASPER_WORKSPACE=./workspace
+CLASPER_WORKSPACE=/path/to/project/agent-config
 
 # Default task title (optional)
-WOMBAT_DEFAULT_TASK=Agent Thread
+CLASPER_DEFAULT_TASK=Agent Thread
 ```
 
 ### Project Integration Pattern
 
-For production projects, keep the workspace config **in your backend repo** (not in wombat). This keeps agent behavior version-controlled with the APIs the agents call.
+For production projects, keep the workspace config **in your backend repo** (not in clasper). This keeps agent behavior version-controlled with the APIs the agents call.
 
 **Example directory structure:**
 
 ```
 your-backend/
 ├── app/                        # Backend code
-├── agent-config/               # Wombat workspace config
-│   ├── workspace/              # ← Set WOMBAT_WORKSPACE to this
+├── agent-config/               # Clasper workspace config
+│   ├── workspace/              # ← Set CLASPER_WORKSPACE to this
 │   │   ├── AGENTS.md           # Operating rules
 │   │   ├── IDENTITY.md         # Agent names/branding
 │   │   ├── HEARTBEAT.md        # Heartbeat checklist
@@ -177,11 +177,11 @@ your-backend/
 └── ...
 ```
 
-**Running wombat for a project:**
+**Running clasper for a project:**
 
 ```bash
-# From wombat directory
-WOMBAT_WORKSPACE=/path/to/your-backend/agent-config/workspace make dev
+# From clasper directory
+CLASPER_WORKSPACE=/path/to/your-backend/agent-config/workspace make dev
 ```
 
 See [docs/examples/multi-agent/](examples/multi-agent/) for a complete example workspace.
@@ -215,11 +215,11 @@ The daemon resolves tasks in priority order:
 
 1. **`task_id`** in request - Use this specific task (backend-owned)
 2. **`task_title`** in request - Find or create task with this title
-3. **`WOMBAT_DEFAULT_TASK`** env var - Fallback default
+3. **`CLASPER_DEFAULT_TASK`** env var - Fallback default
 
 This enables flexible patterns:
-- **Backend-owned**: Backend creates tasks, passes `task_id` to wombat
-- **Wombat-owned**: Wombat auto-creates tasks with `task_title` or default
+- **Backend-owned**: Backend creates tasks, passes `task_id` to clasper
+- **Clasper-owned**: Clasper auto-creates tasks with `task_title` or default
 
 ## API Example
 
@@ -253,7 +253,7 @@ With backend-owned task:
 
 ```
 ┌─────────┐     ┌─────────┐     ┌─────────┐
-│ Backend │────▶│ Wombat  │────▶│ OpenAI  │
+│ Backend │────▶│ Clasper  │────▶│ OpenAI  │
 │         │     │ Daemon  │     │         │
 └─────────┘     └─────────┘     └─────────┘
      │                │
@@ -264,7 +264,7 @@ With backend-owned task:
      │         ┌─────────────┐
      │◀────────│ Agent JWT   │──── X-Agent-Token
      │         │ (minted by  │
-     │         │  wombat)    │
+     │         │  clasper)    │
      │         └─────────────┘
 ```
 
@@ -284,7 +284,7 @@ STANDUP_TIMEZONE=UTC npm run standup
 
 ## Example: Using with a New Project
 
-1. Clone wombat to your dev environment
+1. Clone clasper to your dev environment
 2. Create a workspace folder in your project repo:
    ```
    your-project/
@@ -294,10 +294,10 @@ STANDUP_TIMEZONE=UTC npm run standup
        └── souls/
            └── specialist.md
    ```
-3. Configure wombat:
+3. Configure clasper:
    ```bash
-   WOMBAT_WORKSPACE=/path/to/your-project/agent-config
-   WOMBAT_DEFAULT_TASK=Your Project Task
+   CLASPER_WORKSPACE=/path/to/your-project/agent-config
+   CLASPER_DEFAULT_TASK=Your Project Task
    BACKEND_URL=http://your-backend:8000
    ```
-4. Start wombat: `npm run dev`
+4. Start clasper: `npm run dev`

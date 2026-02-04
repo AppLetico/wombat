@@ -11,7 +11,7 @@ describe('RetentionPolicies', () => {
   let policies: RetentionPolicies;
 
   beforeEach(() => {
-    process.env.WOMBAT_DB_PATH = ':memory:';
+    process.env.CLASPER_DB_PATH = ':memory:';
     initDatabase();
     policies = getRetentionPolicies();
   });
@@ -20,7 +20,7 @@ describe('RetentionPolicies', () => {
     resetRetentionPolicies();
     resetTraceStore();
     closeDatabase();
-    delete process.env.WOMBAT_DB_PATH;
+    delete process.env.CLASPER_DB_PATH;
   });
 
   describe('setPolicy', () => {

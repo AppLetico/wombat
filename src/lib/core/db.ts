@@ -19,7 +19,7 @@ let db: Database.Database | null = null;
  * Get the database path from environment or default
  */
 function getDbPath(): string {
-  return process.env.WOMBAT_DB_PATH || './wombat.db';
+  return process.env.CLASPER_DB_PATH || './clasper.db';
 }
 
 /**

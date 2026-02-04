@@ -5,7 +5,7 @@ import { join } from 'path';
 // Set test database path before importing db module
 const TEST_DB_DIR = join(process.cwd(), '.test-db');
 const TEST_DB_PATH = join(TEST_DB_DIR, 'test.db');
-process.env.WOMBAT_DB_PATH = TEST_DB_PATH;
+process.env.CLASPER_DB_PATH = TEST_DB_PATH;
 
 import { getDatabase, initDatabase, closeDatabase, getDatabaseStats } from './db.js';
 
